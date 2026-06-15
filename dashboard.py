@@ -4,6 +4,9 @@ from pathlib import Path
 
 import pandas as pd
 import streamlit as st
+import plotly.express as px
+import plotly.graph_objects as go
+from streamlit_echarts import st_echarts
 
 from monitor import ALERTS_CSV_PATH, DB_PATH, init_db, run_all, summarize_crawl_policy
 
@@ -29,6 +32,51 @@ if st.button("Lancer un check maintenant"):
 if not Path(DB_PATH).exists():
     st.info("Aucune donnée pour le moment.")
     st.stop()
+
+# KPI Cards
+with sqlite3.connect(DB_PATH) as conn:
+    total_sites = pd.read_sql_query("SELECT COUNT(DISTINCT base_url) as count FROM checks", conn).iloc[0]["count"]
+    total_checks = pd.read_sql_query("SELECT COUNT(*) as count FROM checks", conn).iloc[0]["count"]
+    total_alerts = pd.read_sql_query("SELECT COUNT(*) as count FROM checks WHERE alerts_json != '[]'", conn).iloc[0]["count"]
+
+kpi1, kpi2, kpi3 = st.columns(3)
+with kpi1:
+    st.metric("Sites surveillés", total_sites)
+with kpi2:
+    st.metric("Checks effectués", total_checks)
+with kpi3:
+    st.metric("Alertes détectées", total_alerts)
+
+st.markdown("---")
+
+# Alert severity donut chart
+st.subheader("Répartition des alertes par sévérité")
+alert_severity_data = {"critical": 0, "high": 0, "medium": 0}
+for _, row in latest.iterrows():
+    alerts = json.loads(row["alerts_json"])
+    for alert in alerts:
+        level = alert.get("level") or alert.get("severity")
+        if level in alert_severity_data:
+            alert_severity_data[level] += 1
+
+if sum(alert_severity_data.values()) > 0:
+    fig = px.pie(
+        values=list(alert_severity_data.values()),
+        names=list(alert_severity_data.keys()),
+        hole=0.5,
+        color_discrete_map={"critical": "#8b7a64", "high": "#c2915d", "medium": "#526a68"}
+    )
+    fig.update_traces(textposition='inside', textinfo='percent+label')
+    fig.update_layout(
+        showlegend=True,
+        height=400,
+        margin=dict(l=0, r=0, t=0, b=0)
+    )
+    st.plotly_chart(fig, use_container_width=True)
+else:
+    st.info("Aucune alerte détectée")
+
+st.markdown("---")
 
 with sqlite3.connect(DB_PATH) as conn:
     checks = pd.read_sql_query(
@@ -213,25 +261,122 @@ for _, row in site_rows.iterrows():
             ),
         }
     )
-st.dataframe(pd.DataFrame(history_rows), use_container_width=True)
+
+history_df = pd.DataFrame(history_rows)
+if len(history_df) > 1:
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=history_df["checked_at"],
+        y=history_df["urls_sitemap"],
+        mode="lines+markers",
+        name="URLs sitemap",
+        line=dict(color="#526a68", width=2),
+        marker=dict(size=6)
+    ))
+    fig.add_trace(go.Scatter(
+        x=history_df["checked_at"],
+        y=history_df["sitemaps_crawlés"],
+        mode="lines+markers",
+        name="Sitemaps crawlés",
+        line=dict(color="#c2915d", width=2),
+        marker=dict(size=6)
+    ))
+    fig.update_layout(
+        title="Évolution temporelle",
+        xaxis_title="Date",
+        yaxis_title="Nombre",
+        hovermode="x unified",
+        height=400,
+        margin=dict(l=0, r=0, t=40, b=0),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+    )
+    st.plotly_chart(fig, use_container_width=True)
+    
+    with st.expander("Voir le tableau détaillé"):
+        st.dataframe(history_df, use_container_width=True)
+else:
+    st.dataframe(history_df, use_container_width=True)
 
 st.subheader("URLs importantes vs robots.txt")
 important_url_results = current_important_url_results
-important_rows = []
-for item in important_url_results:
-    row = {
-        "url": item.get("url"),
-        "type": item.get("type"),
-        "priority": item.get("priority"),
-        "homepage": item.get("is_homepage"),
-        "in_sitemap": item.get("in_sitemap"),
-    }
-    for user_agent, allowed in item.get("agents", {}).items():
-        row[user_agent] = "allowed" if allowed else "blocked"
-    important_rows.append(row)
 
-if important_rows:
-    st.dataframe(pd.DataFrame(important_rows), use_container_width=True)
+if important_url_results:
+    # Prepare data for heatmap
+    user_agents = ["Googlebot", "Googlebot-Image", "Bingbot", "GPTBot", "ClaudeBot", "PerplexityBot", "CCBot"]
+    urls = [item.get("url", "") for item in important_url_results[:10]]  # Limit to 10 URLs for readability
+    data = []
+    
+    for i, item in enumerate(important_url_results[:10]):
+        agents = item.get("agents", {})
+        for j, agent in enumerate(user_agents):
+            allowed = agents.get(agent, True)
+            data.append([i, j, 1 if allowed else 0])
+    
+    option = {
+        "tooltip": {
+            "position": "top",
+            "formatter": "function (params) { return params.value[2] === 1 ? 'Allowed' : 'Blocked'; }"
+        },
+        "grid": {
+            "height": "50%",
+            "top": "10%"
+        },
+        "xAxis": {
+            "type": "category",
+            "data": user_agents,
+            "axisLabel": {"rotate": 45}
+        },
+        "yAxis": {
+            "type": "category",
+            "data": [url.split("/")[-1] if len(url.split("/")) > 2 else url for url in urls],
+            "axisLabel": {"width": 100, "overflow": "truncate"}
+        },
+        "visualMap": {
+            "min": 0,
+            "max": 1,
+            "calculable": True,
+            "orient": "horizontal",
+            "left": "center",
+            "bottom": "5%",
+            "inRange": {
+                "color": ["#8b7a64", "#526a68"]
+            }
+        },
+        "series": [
+            {
+                "name": "Access Status",
+                "type": "heatmap",
+                "data": data,
+                "label": {
+                    "show": False
+                },
+                "emphasis": {
+                    "itemStyle": {
+                        "shadowBlur": 10,
+                        "shadowColor": "rgba(0, 0, 0, 0.5)"
+                    }
+                }
+            }
+        ]
+    }
+    
+    st_echarts(options=option, height="400px")
+    
+    # Show detailed table in expander
+    with st.expander("Voir le tableau détaillé"):
+        important_rows = []
+        for item in important_url_results:
+            row = {
+                "url": item.get("url"),
+                "type": item.get("type"),
+                "priority": item.get("priority"),
+                "homepage": item.get("is_homepage"),
+                "in_sitemap": item.get("in_sitemap"),
+            }
+            for user_agent, allowed in item.get("agents", {}).items():
+                row[user_agent] = "allowed" if allowed else "blocked"
+            important_rows.append(row)
+        st.dataframe(pd.DataFrame(important_rows), use_container_width=True)
 else:
     st.info("Aucune URL importante configurée pour ce site.")
 
