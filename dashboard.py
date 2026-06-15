@@ -12,8 +12,12 @@ st.set_page_config(page_title="Robots.txt Monitor", layout="wide")
 with open("style.css", encoding="utf-8") as file:
     st.markdown(f"<style>{file.read()}</style>", unsafe_allow_html=True)
 
-st.title("Robots.txt Monitor")
-st.caption("Dashboard d'alerte multi-sites pour les fichiers robots.txt")
+col_logo, col_title = st.columns([1, 4])
+with col_logo:
+    st.image("owl_logo.png", width=80)
+with col_title:
+    st.title("Robots.txt Monitor")
+    st.caption("Dashboard d'alerte multi-sites pour les fichiers robots.txt")
 
 init_db()
 
