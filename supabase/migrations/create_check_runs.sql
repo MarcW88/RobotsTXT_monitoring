@@ -15,20 +15,5 @@ CREATE INDEX IF NOT EXISTS idx_check_runs_status ON check_runs(status);
 -- Create index on created_at for ordering
 CREATE INDEX IF NOT EXISTS idx_check_runs_created_at ON check_runs(created_at DESC);
 
--- Enable RLS
-ALTER TABLE check_runs ENABLE ROW LEVEL SECURITY;
-
--- Allow read access to authenticated users
-CREATE POLICY "Allow read access to authenticated users" ON check_runs
-  FOR SELECT TO authenticated
-  USING (true);
-
--- Allow insert to authenticated users
-CREATE POLICY "Allow insert to authenticated users" ON check_runs
-  FOR INSERT TO authenticated
-  WITH CHECK (true);
-
--- Allow update to authenticated users
-CREATE POLICY "Allow update to authenticated users" ON check_runs
-  FOR UPDATE TO authenticated
-  USING (true);
+-- Disable RLS for public access from Vercel
+ALTER TABLE check_runs DISABLE ROW LEVEL SECURITY;
