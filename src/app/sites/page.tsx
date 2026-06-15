@@ -13,8 +13,7 @@ export default function SitesPage() {
   const [alerts, setAlerts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [checking, setChecking] = useState(false);
-  const [checkRunId, setCheckRunId] = useState<string | null>(null);
-  const [checkStatus, setCheckStatus] = useState<'idle' | 'queued' | 'running' | 'completed' | 'failed'>('idle');
+  const [checkStatus, setCheckStatus] = useState<'idle' | 'running' | 'completed' | 'failed'>('idle');
 
   useEffect(() => {
     fetchData();
@@ -44,7 +43,7 @@ export default function SitesPage() {
   const checkAllSites = async () => {
     console.log('Starting check...');
     setChecking(true);
-    setCheckStatus('queued');
+    setCheckStatus('running');
 
     try {
       console.log('Calling /api/run-check...');
@@ -58,11 +57,15 @@ export default function SitesPage() {
         const data = await response.json();
         console.log('Check launched:', data);
         
-        if (data.check_run_id) {
-          setCheckRunId(data.check_run_id);
-          // Start polling for status
-          pollCheckStatus(data.check_run_id);
-        }
+        // Wait for GitHub Actions to complete (approx 2 minutes)
+        setTimeout(async () => {
+          await fetchData();
+          setCheckStatus('completed');
+          setTimeout(() => {
+            setChecking(false);
+            setCheckStatus('idle');
+          }, 3000);
+        }, 120000); // 2 minutes
       } else {
         console.error('Failed to launch check');
         setCheckStatus('failed');
@@ -73,48 +76,6 @@ export default function SitesPage() {
       setCheckStatus('failed');
       setChecking(false);
     }
-  };
-
-  const pollCheckStatus = async (checkRunId: string) => {
-    const pollInterval = setInterval(async () => {
-      try {
-        const { data: checkRun, error } = await supabase
-          .from('check_runs')
-          .select('*')
-          .eq('id', checkRunId)
-          .single();
-
-        if (error || !checkRun) {
-          console.error('Error polling check status:', error);
-          clearInterval(pollInterval);
-          setCheckStatus('failed');
-          setChecking(false);
-          return;
-        }
-
-        console.log('Check status:', checkRun.status);
-        setCheckStatus(checkRun.status as any);
-
-        // Stop polling when completed or failed
-        if (checkRun.status === 'completed' || checkRun.status === 'failed') {
-          clearInterval(pollInterval);
-          
-          // Refresh data after completion
-          await fetchData();
-          
-          // Reset checking state after a delay
-          setTimeout(() => {
-            setChecking(false);
-            setCheckStatus('idle');
-          }, 2000);
-        }
-      } catch (error) {
-        console.error('Error polling check status:', error);
-        clearInterval(pollInterval);
-        setCheckStatus('failed');
-        setChecking(false);
-      }
-    }, 3000); // Poll every 3 seconds
   };
 
   if (loading) return <div className="p-8">Loading...</div>;
@@ -156,7 +117,6 @@ export default function SitesPage() {
         >
           <Play className="w-5 h-5" />
           {checkStatus === 'idle' && 'Check All Sites'}
-          {checkStatus === 'queued' && 'Check queued...'}
           {checkStatus === 'running' && 'Check running...'}
           {checkStatus === 'completed' && 'Check completed'}
           {checkStatus === 'failed' && 'Check failed'}
@@ -176,13 +136,11 @@ export default function SitesPage() {
         >
           <div className="flex items-center gap-3">
             <div className="w-3 h-3 rounded-full animate-pulse" style={{ 
-              background: checkStatus === 'queued' ? 'var(--tweed)' : 
-                        checkStatus === 'running' ? 'var(--petrol)' : 
+              background: checkStatus === 'running' ? 'var(--petrol)' : 
                         checkStatus === 'completed' ? 'var(--petrol)' : 'var(--copper)'
             }} />
             <span className="font-medium" style={{ fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
-              {checkStatus === 'queued' && 'Check queued - waiting for GitHub Actions to start...'}
-              {checkStatus === 'running' && 'Check running - monitoring robots.txt files...'}
+              {checkStatus === 'running' && 'Check running - monitoring robots.txt files via GitHub Actions...'}
               {checkStatus === 'completed' && 'Check completed! Data refreshed.'}
               {checkStatus === 'failed' && 'Check failed - please check GitHub Actions for errors'}
             </span>
