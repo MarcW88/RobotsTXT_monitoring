@@ -15,10 +15,10 @@ Utiliser une configuration :
 ## URL MCP recommandée
 
 ```text
-https://mcp.supabase.com/mcp?project_ref=YOUR_PROJECT_REF&read_only=true&features=database,docs,debugging,development
+https://mcp.supabase.com/mcp?project_ref=zmzyvnvjgpxecehjtqfr&read_only=true&features=database,docs,debugging,development
 ```
 
-Remplace `YOUR_PROJECT_REF` par le Project ID Supabase.
+Ton project_ref est déjà configuré : `zmzyvnvjgpxecehjtqfr`
 
 Tu peux le trouver dans :
 
@@ -35,7 +35,7 @@ Supabase Dashboard -> Project Settings -> General -> Project ID
   "mcpServers": {
     "supabase": {
       "type": "http",
-      "url": "https://mcp.supabase.com/mcp?project_ref=YOUR_PROJECT_REF&read_only=true&features=database,docs,debugging,development"
+      "url": "https://mcp.supabase.com/mcp?project_ref=zmzyvnvjgpxecehjtqfr&read_only=true&features=database,docs,debugging,development"
     }
   }
 }
