@@ -2,10 +2,11 @@
 
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Globe, AlertTriangle, Clock, Play } from 'lucide-react';
+import { Globe, AlertTriangle, Clock, Play, Home, Settings, FileText, LayoutDashboard } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from "@/lib/supabase";
 import Link from 'next/link';
+import { Sidebar } from "@/components/sidebar";
 
 export default function SitesPage() {
   const [sites, setSites] = useState<any[]>([]);
@@ -125,7 +126,9 @@ export default function SitesPage() {
   }));
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="flex">
+      <Sidebar />
+      <div className="flex-1 p-8 space-y-8">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -237,6 +240,7 @@ export default function SitesPage() {
             </Link>
           );
         })}
+      </div>
       </div>
     </div>
   );
