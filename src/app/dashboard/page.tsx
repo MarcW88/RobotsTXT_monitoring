@@ -83,9 +83,10 @@ export default function Dashboard() {
 
       alert('All analysis data deleted successfully');
       
-      // Force refresh
+      // Force refresh and reset KPIs
       setAlerts([]);
       setSites([]);
+      setLoading(true);
       await fetchData();
     } catch (error) {
       console.error('Error deleting analysis data:', error);

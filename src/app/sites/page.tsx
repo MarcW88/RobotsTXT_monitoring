@@ -163,8 +163,10 @@ export default function SitesPage() {
 
       alert('All analysis data deleted successfully');
       
-      // Force refresh by clearing state and fetching again
+      // Force refresh and reset KPIs
       setAlerts([]);
+      setSites([]);
+      setLoading(true);
       await fetchData();
     } catch (error) {
       console.error('Error deleting analysis data:', error);
