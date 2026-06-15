@@ -162,7 +162,10 @@ export default function SitesPage() {
       }
 
       alert('All analysis data deleted successfully');
-      fetchData();
+      
+      // Force refresh by clearing state and fetching again
+      setAlerts([]);
+      await fetchData();
     } catch (error) {
       console.error('Error deleting analysis data:', error);
       alert('Failed to delete analysis data');
