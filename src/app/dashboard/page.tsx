@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Activity, AlertTriangle, Globe, TrendingDown, TrendingUp, Clock } from 'lucide-react';
+import { Activity, AlertTriangle, Globe, TrendingDown, TrendingUp, Clock, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from "@/lib/supabase";
 
@@ -39,6 +39,60 @@ export default function Dashboard() {
     }
   };
 
+  const deleteAnalysisData = async () => {
+    if (!confirm('Are you sure you want to delete all analysis data? This cannot be undone.')) {
+      return;
+    }
+
+    try {
+      // Delete all alerts
+      const { error: alertsError } = await supabase
+        .from('alerts')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+
+      if (alertsError) {
+        console.error('Error deleting alerts:', alertsError);
+        alert('Failed to delete alerts');
+        return;
+      }
+
+      // Delete all checks
+      const { error: checksError } = await supabase
+        .from('checks')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+
+      if (checksError) {
+        console.error('Error deleting checks:', checksError);
+        alert('Failed to delete checks');
+        return;
+      }
+
+      // Delete sitemap details
+      const { error: sitemapError } = await supabase
+        .from('sitemap_details')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+
+      if (sitemapError) {
+        console.error('Error deleting sitemap details:', sitemapError);
+        alert('Failed to delete sitemap details');
+        return;
+      }
+
+      alert('All analysis data deleted successfully');
+      
+      // Force refresh
+      setAlerts([]);
+      setSites([]);
+      await fetchData();
+    } catch (error) {
+      console.error('Error deleting analysis data:', error);
+      alert('Failed to delete analysis data');
+    }
+  };
+
   if (!mounted) return null;
 
   const alertCounts = {
@@ -60,14 +114,30 @@ export default function Dashboard() {
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mb-8"
+        className="mb-8 flex items-center justify-between"
       >
-        <h1 className="text-5xl font-bold mb-2" style={{ color: 'var(--petrol)', fontFamily: 'var(--font-fraunces), Georgia, serif', letterSpacing: '-0.06em' }}>
-          Dashboard
-        </h1>
-        <p className="text-lg" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
-          Monitor your robots.txt and sitemap health
-        </p>
+        <div>
+          <h1 className="text-5xl font-bold mb-2" style={{ color: 'var(--petrol)', fontFamily: 'var(--font-fraunces), Georgia, serif', letterSpacing: '-0.06em' }}>
+            Dashboard
+          </h1>
+          <p className="text-lg" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+            Monitor your robots.txt and sitemap health
+          </p>
+        </div>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={deleteAnalysisData}
+          className="px-6 py-3 rounded-lg font-semibold flex items-center gap-2"
+          style={{
+            background: '#c44',
+            color: 'var(--cream)',
+            fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif'
+          }}
+        >
+          <Trash2 className="w-5 h-5" />
+          Delete Analysis
+        </motion.button>
       </motion.div>
 
       {/* Hero Status Panel */}
