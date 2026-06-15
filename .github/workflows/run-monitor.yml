@@ -26,14 +26,19 @@ jobs:
       
       - name: Install dependencies
         run: |
+          echo "Installing dependencies..."
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          echo "Dependencies installed successfully"
       
       - name: Run monitor script
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
+          echo "=== Starting monitor script ==="
           echo "SUPABASE_URL is set: $([ -n "$SUPABASE_URL" ] && echo "YES" || echo "NO")"
           echo "SUPABASE_KEY is set: $([ -n "$SUPABASE_KEY" ] && echo "YES" || echo "NO")"
+          echo "Running python monitor.py..."
           python monitor.py
+          echo "=== Monitor script completed ==="

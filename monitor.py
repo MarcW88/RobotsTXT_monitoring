@@ -119,8 +119,13 @@ def init_db():
 
 
 def load_sites(config_path="sites.yml"):
+    print("=== Starting load_sites ===")
+    print(f"SUPABASE_URL: {os.getenv('SUPABASE_URL', 'NOT SET')}")
+    print(f"SUPABASE_KEY: {'SET' if os.getenv('SUPABASE_KEY') else 'NOT SET'}")
+    
     # Try to load from Supabase first
     try:
+        print("Attempting to load from Supabase...")
         supabase_client = supabase.create_client(
             os.getenv('SUPABASE_URL'),
             os.getenv('SUPABASE_KEY')
@@ -138,8 +143,12 @@ def load_sites(config_path="sites.yml"):
                 })
             print(f"Loaded {len(sites)} sites from Supabase")
             return sites
+        else:
+            print("No sites found in Supabase")
     except Exception as e:
         print(f"Error loading sites from Supabase: {e}")
+        import traceback
+        traceback.print_exc()
     
     # Try to load from Streamlit secrets
     try:
@@ -571,22 +580,30 @@ def summarize_crawl_policy(status_code, alerts, important_url_results, sitemap_d
 
 
 def save_check(site, result):
+    print(f"=== Starting save_check for site: {site['name']} ===")
+    print(f"SUPABASE_URL: {os.getenv('SUPABASE_URL', 'NOT SET')}")
+    print(f"SUPABASE_KEY: {'SET' if os.getenv('SUPABASE_KEY') else 'NOT SET'}")
+    
     # Save to Supabase instead of local SQLite
     try:
+        print("Creating Supabase client...")
         supabase_client = supabase.create_client(
             os.getenv('SUPABASE_URL'),
             os.getenv('SUPABASE_KEY')
         )
         
         # Get site ID from Supabase
+        print(f"Looking up site ID for base_url: {site['base_url']}")
         site_response = supabase_client.table('sites').select('id').eq('base_url', site['base_url']).execute()
         if not site_response.data:
             print(f"Site not found in Supabase: {site['base_url']}")
             return
         
         site_id = site_response.data[0]['id']
+        print(f"Found site ID: {site_id}")
         
         # Insert check with intelligence data
+        print("Preparing check data...")
         check_data = {
             'site_id': site_id,
             'checked_at': result['checked_at'],
@@ -606,12 +623,16 @@ def save_check(site, result):
             'portfolio_benchmark': result.get('portfolio_benchmark')
         }
         
+        print("Inserting check into Supabase...")
         supabase_client.table('checks').insert(check_data).execute()
         print(f"Check saved to Supabase for site: {site['name']}")
         
     except Exception as e:
         print(f"Error saving to Supabase: {e}")
+        import traceback
+        traceback.print_exc()
         # Fallback to local SQLite
+        print("Falling back to local SQLite...")
         with sqlite3.connect(DB_PATH) as conn:
             conn.execute(
                 """
@@ -637,6 +658,7 @@ def save_check(site, result):
                 ),
             )
             conn.commit()
+            print("Check saved to local SQLite")
 
 
 def check_site(site):
