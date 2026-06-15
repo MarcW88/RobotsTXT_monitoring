@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Globe, AlertTriangle, Clock, Play, Home, Settings, FileText, LayoutDashboard, Plus, X } from 'lucide-react';
+import { Globe, AlertTriangle, Clock, Play, Home, Settings, FileText, LayoutDashboard, Plus, X, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from "@/lib/supabase";
 import Link from 'next/link';
@@ -119,6 +119,56 @@ export default function SitesPage() {
     }
   };
 
+  const deleteAnalysisData = async () => {
+    if (!confirm('Are you sure you want to delete all analysis data? This cannot be undone.')) {
+      return;
+    }
+
+    try {
+      // Delete all alerts
+      const { error: alertsError } = await supabase
+        .from('alerts')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+
+      if (alertsError) {
+        console.error('Error deleting alerts:', alertsError);
+        alert('Failed to delete alerts');
+        return;
+      }
+
+      // Delete all checks
+      const { error: checksError } = await supabase
+        .from('checks')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+
+      if (checksError) {
+        console.error('Error deleting checks:', checksError);
+        alert('Failed to delete checks');
+        return;
+      }
+
+      // Delete sitemap details
+      const { error: sitemapError } = await supabase
+        .from('sitemap_details')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+
+      if (sitemapError) {
+        console.error('Error deleting sitemap details:', sitemapError);
+        alert('Failed to delete sitemap details');
+        return;
+      }
+
+      alert('All analysis data deleted successfully');
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting analysis data:', error);
+      alert('Failed to delete analysis data');
+    }
+  };
+
   if (loading) return <div className="p-8">Loading...</div>;
 
   const sitesWithAlerts = sites.map(site => ({
@@ -175,6 +225,20 @@ export default function SitesPage() {
         >
           <Plus className="w-5 h-5" />
           Add Site
+        </motion.button>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={deleteAnalysisData}
+          className="px-6 py-3 rounded-lg font-semibold flex items-center gap-2"
+          style={{
+            background: '#c44',
+            color: 'var(--cream)',
+            fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif'
+          }}
+        >
+          <Trash2 className="w-5 h-5" />
+          Delete Analysis
         </motion.button>
       </motion.div>
 
