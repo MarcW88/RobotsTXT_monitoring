@@ -10,6 +10,7 @@ export default function Dashboard() {
   const [mounted, setMounted] = useState(false);
   const [sites, setSites] = useState<any[]>([]);
   const [alerts, setAlerts] = useState<any[]>([]);
+  const [checks, setChecks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,8 +31,15 @@ export default function Dashboard() {
         .order('created_at', { ascending: false })
         .limit(100);
 
+      const { data: checksData } = await supabase
+        .from('checks')
+        .select('*')
+        .order('checked_at', { ascending: false })
+        .limit(10);
+
       setSites(sitesData || []);
       setAlerts(alertsData || []);
+      setChecks(checksData || []);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -86,6 +94,7 @@ export default function Dashboard() {
       // Force refresh and reset KPIs
       setAlerts([]);
       setSites([]);
+      setChecks([]);
       setLoading(true);
       await fetchData();
     } catch (error) {
@@ -140,6 +149,192 @@ export default function Dashboard() {
           Delete Analysis
         </motion.button>
       </motion.div>
+
+      {/* Robots Intelligence Score */}
+      {checks.length > 0 && checks[0].robots_intelligence_score && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+        >
+          <Card style={{
+            background: 'radial-gradient(circle at 18% 12%, rgba(194, 145, 93, 0.08), transparent 28%), rgba(255, 248, 234, 0.56)',
+            border: '1px solid var(--line)'
+          }}>
+            <CardHeader>
+              <CardTitle style={{ fontFamily: 'var(--font-fraunces), Georgia, serif', color: 'var(--petrol)' }}>
+                Robots Intelligence Score
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div className="text-center">
+                  <div className="text-6xl font-bold mb-2" style={{ 
+                    color: checks[0].robots_intelligence_score.overall_score >= 80 ? 'var(--petrol)' : 
+                           checks[0].robots_intelligence_score.overall_score >= 60 ? 'var(--copper)' : '#c44',
+                    fontFamily: 'var(--font-fraunces), Georgia, serif'
+                  }}>
+                    {checks[0].robots_intelligence_score.overall_score}/100
+                  </div>
+                  <div className="text-sm" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                    Grade: {checks[0].robots_intelligence_score.grade}
+                  </div>
+                </div>
+                <div className="flex-1 ml-8 space-y-2">
+                  {Object.entries(checks[0].robots_intelligence_score.component_scores).map(([key, value]) => (
+                    <div key={key} className="flex items-center justify-between">
+                      <span className="text-sm" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                        {key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-32 h-2 rounded-full" style={{ background: 'var(--paper-deep)' }}>
+                          <div 
+                            className="h-full rounded-full" 
+                            style={{ 
+                              width: `${Number(value)}%`,
+                              background: Number(value) >= 15 ? 'var(--petrol)' : Number(value) >= 10 ? 'var(--copper)' : '#c44'
+                            }}
+                          />
+                        </div>
+                        <span className="text-sm font-medium" style={{ fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                          {Number(value)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      {/* AI Accessibility Matrix */}
+      {checks.length > 0 && checks[0].ai_accessibility && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <Card style={{
+            background: 'rgba(255, 248, 234, 0.56)',
+            border: '1px solid var(--line)'
+          }}>
+            <CardHeader>
+              <CardTitle style={{ fontFamily: 'var(--font-fraunces), Georgia, serif', color: 'var(--petrol)' }}>
+                AI Accessibility Score
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-center">
+                  <div className="text-4xl font-bold mb-1" style={{ 
+                    color: checks[0].ai_accessibility.ai_accessibility_score >= 80 ? 'var(--petrol)' : 
+                           checks[0].ai_accessibility.ai_accessibility_score >= 50 ? 'var(--copper)' : '#c44',
+                    fontFamily: 'var(--font-fraunces), Georgia, serif'
+                  }}>
+                    {checks[0].ai_accessibility.ai_accessibility_score}%
+                  </div>
+                  <div className="text-sm" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                    Risk: {checks[0].ai_accessibility.risk_level}
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold" style={{ color: 'var(--petrol)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
+                      {checks[0].ai_accessibility.accessible_bots.length}
+                    </div>
+                    <div className="text-xs" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                      Accessible
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold" style={{ color: '#c44', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
+                      {checks[0].ai_accessibility.blocked_bots.length}
+                    </div>
+                    <div className="text-xs" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                      Blocked
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-5 gap-2">
+                {Object.entries(checks[0].ai_accessibility.ai_accessibility_matrix).map(([bot, data]: [string, any]) => (
+                  <div key={bot} className="p-2 rounded text-center" style={{
+                    background: data.accessibility_percentage >= 80 ? 'rgba(52, 131, 78, 0.1)' : 
+                           data.accessibility_percentage >= 50 ? 'rgba(194, 145, 93, 0.1)' : 'rgba(196, 68, 68, 0.1)',
+                    border: '1px solid var(--line)'
+                  }}>
+                    <div className="text-xs font-medium mb-1" style={{ fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                      {bot}
+                    </div>
+                    <div className="text-lg font-bold" style={{ 
+                      color: data.accessibility_percentage >= 80 ? 'var(--petrol)' : 
+                             data.accessibility_percentage >= 50 ? 'var(--copper)' : '#c44',
+                      fontFamily: 'var(--font-fraunces), Georgia, serif'
+                    }}>
+                      {data.accessibility_percentage}%
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      {/* Risk Impact Classification */}
+      {checks.length > 0 && checks[0].risk_classification && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+        >
+          <Card style={{
+            background: 'rgba(255, 248, 234, 0.56)',
+            border: '1px solid var(--line)'
+          }}>
+            <CardHeader>
+              <CardTitle style={{ fontFamily: 'var(--font-fraunces), Georgia, serif', color: 'var(--petrol)' }}>
+                Risk Impact Classification
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center p-4 rounded" style={{ background: 'rgba(52, 131, 78, 0.1)' }}>
+                  <div className="text-3xl font-bold mb-1" style={{ color: 'var(--petrol)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
+                    {checks[0].risk_classification.counts.seo}
+                  </div>
+                  <div className="text-sm" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                    SEO Alerts
+                  </div>
+                </div>
+                <div className="text-center p-4 rounded" style={{ background: 'rgba(194, 145, 93, 0.1)' }}>
+                  <div className="text-3xl font-bold mb-1" style={{ color: 'var(--copper)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
+                    {checks[0].risk_classification.counts.geo}
+                  </div>
+                  <div className="text-sm" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                    GEO Alerts
+                  </div>
+                </div>
+                <div className="text-center p-4 rounded" style={{ background: 'rgba(196, 68, 68, 0.1)' }}>
+                  <div className="text-3xl font-bold mb-1" style={{ color: '#c44', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
+                    {checks[0].risk_classification.counts.both}
+                  </div>
+                  <div className="text-sm" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                    Both Impact
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 text-center">
+                <span className="text-sm" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                  Primary Impact: <strong>{checks[0].risk_classification.primary_impact.toUpperCase()}</strong>
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
       {/* Hero Status Panel */}
       <motion.div
