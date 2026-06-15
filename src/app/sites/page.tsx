@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Globe, AlertTriangle, Clock, Play, Home, Settings, FileText, LayoutDashboard } from 'lucide-react';
+import { Globe, AlertTriangle, Clock, Play, Home, Settings, FileText, LayoutDashboard, Plus, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from "@/lib/supabase";
 import Link from 'next/link';
@@ -15,6 +15,9 @@ export default function SitesPage() {
   const [checking, setChecking] = useState(false);
   const [checkStatus, setCheckStatus] = useState<'idle' | 'running' | 'completed' | 'failed'>('idle');
   const [currentSiteIndex, setCurrentSiteIndex] = useState(0);
+  const [showAddSite, setShowAddSite] = useState(false);
+  const [newSiteName, setNewSiteName] = useState('');
+  const [newSiteUrl, setNewSiteUrl] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -87,6 +90,35 @@ export default function SitesPage() {
     }
   };
 
+  const addSite = async () => {
+    if (!newSiteName || !newSiteUrl) return;
+
+    try {
+      const { error } = await supabase
+        .from('sites')
+        .insert({
+          name: newSiteName,
+          base_url: newSiteUrl,
+          critical_patterns: ['/'],
+          known_sitemaps: []
+        });
+
+      if (error) {
+        console.error('Error adding site:', error);
+        alert('Failed to add site');
+        return;
+      }
+
+      setNewSiteName('');
+      setNewSiteUrl('');
+      setShowAddSite(false);
+      fetchData();
+    } catch (error) {
+      console.error('Error adding site:', error);
+      alert('Failed to add site');
+    }
+  };
+
   if (loading) return <div className="p-8">Loading...</div>;
 
   const sitesWithAlerts = sites.map(site => ({
@@ -130,6 +162,20 @@ export default function SitesPage() {
           {checkStatus === 'completed' && 'Check completed'}
           {checkStatus === 'failed' && 'Check failed'}
         </motion.button>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setShowAddSite(!showAddSite)}
+          className="px-6 py-3 rounded-lg font-semibold flex items-center gap-2"
+          style={{
+            background: 'var(--copper)',
+            color: 'var(--cream)',
+            fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif'
+          }}
+        >
+          <Plus className="w-5 h-5" />
+          Add Site
+        </motion.button>
       </motion.div>
 
       {/* Check status indicator */}
@@ -163,6 +209,78 @@ export default function SitesPage() {
                 Checking: {sites[currentSiteIndex].name}
               </div>
             )}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Add site form */}
+      {showAddSite && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-6 rounded-lg"
+          style={{
+            background: 'rgba(255, 248, 234, 0.8)',
+            border: '1px solid var(--line)'
+          }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold" style={{ fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
+              Add New Site
+            </h3>
+            <button
+              onClick={() => setShowAddSite(false)}
+              className="p-2 rounded-full hover:bg-white/50"
+            >
+              <X className="w-5 h-5" style={{ color: 'var(--tweed)' }} />
+            </button>
+          </div>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-2" style={{ fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                Site Name
+              </label>
+              <input
+                type="text"
+                value={newSiteName}
+                onChange={(e) => setNewSiteName(e.target.value)}
+                placeholder="e.g., My Website"
+                className="w-full px-4 py-2 rounded-lg border"
+                style={{
+                  background: 'var(--cream)',
+                  borderColor: 'var(--line)',
+                  fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif'
+                }}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2" style={{ fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                Base URL
+              </label>
+              <input
+                type="url"
+                value={newSiteUrl}
+                onChange={(e) => setNewSiteUrl(e.target.value)}
+                placeholder="https://example.com"
+                className="w-full px-4 py-2 rounded-lg border"
+                style={{
+                  background: 'var(--cream)',
+                  borderColor: 'var(--line)',
+                  fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif'
+                }}
+              />
+            </div>
+            <button
+              onClick={addSite}
+              className="w-full px-4 py-2 rounded-lg font-semibold"
+              style={{
+                background: 'var(--petrol)',
+                color: 'var(--cream)',
+                fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif'
+              }}
+            >
+              Add Site
+            </button>
           </div>
         </motion.div>
       )}
