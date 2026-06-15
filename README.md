@@ -2,6 +2,19 @@
 
 Outil de monitoring quotidien des fichiers `robots.txt` pour plusieurs sites.
 
+## Base de données
+
+L’outil fonctionne sur une base de données **SQLite locale** :
+
+- **Fichier** : `data/robots_monitor.sqlite3`
+- **Création automatique** : le dossier `data/` et le fichier SQLite sont créés automatiquement au premier lancement
+- **Pas de connexion externe** : tout est stocké localement, pas besoin de serveur de base de données
+- **Lecture/écriture** :
+  - `monitor.py` écrit les résultats des checks dans la base
+  - `dashboard.py` lit la base pour afficher les données
+
+Le dashboard lit directement cette base SQLite locale pour afficher les résultats.
+
 ## Pourquoi cet outil alors que Google Search Console existe ?
 
 Google Search Console est utile pour diagnostiquer un site après coup, mais elle n'est pas conçue comme un système d'alerte multi-sites en temps réel.
