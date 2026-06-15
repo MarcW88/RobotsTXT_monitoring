@@ -119,7 +119,29 @@ def init_db():
 
 
 def load_sites(config_path="sites.yml"):
-    # Try to load from Streamlit secrets first
+    # Try to load from Supabase first
+    try:
+        supabase_client = supabase.create_client(
+            os.getenv('SUPABASE_URL'),
+            os.getenv('SUPABASE_KEY')
+        )
+        
+        response = supabase_client.table('sites').select('*').eq('is_active', True).execute()
+        if response.data:
+            sites = []
+            for site in response.data:
+                sites.append({
+                    'name': site['name'],
+                    'base_url': site['base_url'],
+                    'critical_patterns': site.get('critical_patterns', ['/']),
+                    'known_sitemaps': site.get('known_sitemaps', [])
+                })
+            print(f"Loaded {len(sites)} sites from Supabase")
+            return sites
+    except Exception as e:
+        print(f"Error loading sites from Supabase: {e}")
+    
+    # Try to load from Streamlit secrets
     try:
         import streamlit as st
         if "sites" in st.secrets:
