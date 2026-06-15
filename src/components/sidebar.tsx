@@ -10,6 +10,7 @@ import {
   FileText, 
   Settings
 } from 'lucide-react';
+import Image from 'next/image';
 
 const navItems = [
   { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
@@ -33,8 +34,14 @@ export function Sidebar() {
       }}
     >
       <div className="mb-6">
-        <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ border: '1px solid var(--line)', background: 'var(--petrol)' }}>
-          <span className="text-white font-bold" style={{ fontFamily: 'var(--font-fraunces), Georgia, serif' }}>N</span>
+        <div className="w-10 h-10 rounded-full overflow-hidden" style={{ border: '1px solid var(--line)' }}>
+          <Image 
+            src="/noctua-logo.png" 
+            alt="Noctua Logo" 
+            width={40}
+            height={40}
+            className="object-cover"
+          />
         </div>
       </div>
 
