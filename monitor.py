@@ -21,6 +21,14 @@ from advertools_adapter import (
     normalize_sitemap_dataframe,
     analyze_robots_intelligence
 )
+from robots_intelligence import (
+    RobotsIntelligenceScore,
+    AIAccessibilityScore,
+    PortfolioBenchmark,
+    DirectiveExplainability,
+    RobotsDiffIntelligence,
+    RiskImpactClassification
+)
 
 DATA_DIR = Path("data")
 DB_PATH = DATA_DIR / "robots_monitor.sqlite3"
@@ -611,6 +619,54 @@ def check_site(site):
         robots_intelligence = analyze_robots_intelligence(robots_df, robots_issues)
         result["robots_intelligence"] = robots_intelligence
         result["robots_issues"] = robots_issues
+        
+        # Calculate Robots Intelligence Score
+        robots_accessible = status_code is not None and status_code < 400
+        sitemap_declared = len(sitemaps) > 0
+        sitemap_valid = any(detail.get('type') == 'urlset' for detail in sitemap_details)
+        ai_bots_consistent = not any(issue['type'] == 'ai_specific_rules' for issue in robots_issues)
+        no_contradictory_directives = not any(issue['type'] == 'contradictory_directive' for issue in robots_issues)
+        
+        # Check business URLs accessibility
+        business_urls_accessible = True
+        for url_result in important_url_results:
+            if url_result.get('type', '').lower() in {'conversion', 'business', 'money'}:
+                agents = url_result.get('agents', {})
+                if not agents.get('Googlebot', True):
+                    business_urls_accessible = False
+                    break
+        
+        # Calculate historical stability
+        historical_stability = 1.0
+        if previous:
+            previous_hash = previous.get('content_hash')
+            current_hash = content_hash(content)
+            if previous_hash != current_hash:
+                historical_stability = 0.5  # Reduced stability if changed
+        
+        robots_score = RobotsIntelligenceScore.calculate_score(
+            robots_accessible=robots_accessible,
+            sitemap_declared=sitemap_declared,
+            sitemap_valid=sitemap_valid,
+            ai_bots_consistent=ai_bots_consistent,
+            no_contradictory_directives=no_contradictory_directives,
+            business_urls_accessible=business_urls_accessible,
+            historical_stability=historical_stability
+        )
+        result["robots_intelligence_score"] = robots_score
+        
+        # Calculate AI Accessibility Score
+        ai_accessibility = AIAccessibilityScore.calculate_score(important_url_results)
+        result["ai_accessibility"] = ai_accessibility
+        
+        # Classify alerts by risk impact
+        risk_classification = RiskImpactClassification.classify_alerts(alerts)
+        result["risk_classification"] = risk_classification
+        
+        # Analyze robots diff if previous exists
+        if previous and previous.get('content'):
+            diff_analysis = RobotsDiffIntelligence.analyze_diff(previous['content'], content)
+            result["robots_diff"] = diff_analysis
     
     save_check(site, result)
     return result
@@ -645,13 +701,32 @@ def export_alerts_csv(results):
 
 
 def run_all(config_path="sites.yml"):
-    """Run all site checks using advertools-enhanced parsing."""
+    """Run all site checks using advertools-enhanced parsing and intelligence."""
     init_db()
     sites = load_sites(config_path)
     results = []
     for site in sites:
         results.append({"site": site, "result": check_site(site)})
     export_alerts_csv(results)
+    
+    # Generate portfolio benchmark
+    sites_data = []
+    for item in results:
+        site_data = {
+            "name": item["site"]["name"],
+            "robots_intelligence": item["result"].get("robots_intelligence_score", {}),
+            "ai_accessibility": item["result"].get("ai_accessibility", {}),
+            "sitemaps": item["result"].get("sitemaps", []),
+            "alerts": item["result"].get("alerts", [])
+        }
+        sites_data.append(site_data)
+    
+    portfolio_benchmark = PortfolioBenchmark.generate_benchmark(sites_data)
+    
+    # Add portfolio benchmark to results
+    for item in results:
+        item["portfolio_benchmark"] = portfolio_benchmark
+    
     return results
 
 
