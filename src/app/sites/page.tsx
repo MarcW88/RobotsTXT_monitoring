@@ -57,7 +57,7 @@ export default function SitesPage() {
         const data = await response.json();
         console.log('Check launched:', data);
         
-        // Wait for GitHub Actions to complete (approx 2 minutes)
+        // Wait for GitHub Actions to complete (approx 1 minute)
         setTimeout(async () => {
           await fetchData();
           setCheckStatus('completed');
@@ -65,7 +65,7 @@ export default function SitesPage() {
             setChecking(false);
             setCheckStatus('idle');
           }, 3000);
-        }, 120000); // 2 minutes
+        }, 60000); // 1 minute
       } else {
         console.error('Failed to launch check');
         setCheckStatus('failed');
