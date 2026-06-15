@@ -39,12 +39,16 @@ export default function SitesPage() {
   };
 
   const checkAllSites = async () => {
+    console.log('Starting check...');
     setChecking(true);
 
     try {
+      console.log('Calling /api/run-check...');
       const response = await fetch('/api/run-check', {
         method: 'POST',
       });
+      
+      console.log('Response status:', response.status);
       
       if (response.ok) {
         const data = await response.json();
