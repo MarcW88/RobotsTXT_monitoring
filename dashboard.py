@@ -17,7 +17,7 @@ with open("style.css", encoding="utf-8") as file:
 
 col_logo, col_title = st.columns([1, 4])
 with col_logo:
-    st.image("owl_logo.png", width=120)
+    st.image("hibou_logo_transparent_7680.png", width=120)
 with col_title:
     st.title("Robots.txt Monitor")
     st.caption("Dashboard d'alerte multi-sites pour les fichiers robots.txt")
