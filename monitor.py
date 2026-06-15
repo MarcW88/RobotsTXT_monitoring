@@ -102,6 +102,15 @@ def init_db():
 
 
 def load_sites(config_path="sites.yml"):
+    # Try to load from Streamlit secrets first
+    try:
+        import streamlit as st
+        if "sites" in st.secrets:
+            return st.secrets["sites"]
+    except Exception:
+        pass
+    
+    # Fallback to local file
     path = Path(config_path)
     if not path.exists():
         path = Path("sites.example.yml")

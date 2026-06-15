@@ -6,3 +6,4 @@ venv/
 data/
 sites.yml
 important_urls.csv
+.streamlit/secrets.toml
