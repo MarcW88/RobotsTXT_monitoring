@@ -11,6 +11,7 @@ from urllib.parse import urljoin
 
 import requests
 import yaml
+import supabase
 
 from robots_policy import can_fetch_url
 from advertools_adapter import (
@@ -548,31 +549,72 @@ def summarize_crawl_policy(status_code, alerts, important_url_results, sitemap_d
 
 
 def save_check(site, result):
-    with sqlite3.connect(DB_PATH) as conn:
-        conn.execute(
-            """
-            INSERT INTO checks (
-                checked_at, site_name, base_url, robots_url, status_code,
-                final_url, content_hash, content, sitemaps_json, sitemap_details_json,
-                important_url_results_json, alerts_json
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                result["checked_at"],
-                site["name"],
-                site["base_url"],
-                result["robots_url"],
-                result["status_code"],
-                result["final_url"],
-                result["content_hash"],
-                result["content"],
-                json.dumps(result["sitemaps"], ensure_ascii=False),
-                json.dumps(result["sitemap_details"], ensure_ascii=False),
-                json.dumps(result["important_url_results"], ensure_ascii=False),
-                json.dumps(result["alerts"], ensure_ascii=False),
-            ),
+    # Save to Supabase instead of local SQLite
+    try:
+        supabase_client = supabase.create_client(
+            os.getenv('SUPABASE_URL'),
+            os.getenv('SUPABASE_KEY')
         )
-        conn.commit()
+        
+        # Get site ID from Supabase
+        site_response = supabase_client.table('sites').select('id').eq('base_url', site['base_url']).execute()
+        if not site_response.data:
+            print(f"Site not found in Supabase: {site['base_url']}")
+            return
+        
+        site_id = site_response.data[0]['id']
+        
+        # Insert check with intelligence data
+        check_data = {
+            'site_id': site_id,
+            'checked_at': result['checked_at'],
+            'robots_url': result['robots_url'],
+            'status_code': result['status_code'],
+            'final_url': result['final_url'],
+            'content_hash': result['content_hash'],
+            'content': result['content'],
+            'sitemaps': result['sitemaps'],
+            'sitemap_details': result['sitemap_details'],
+            'important_url_results': result['important_url_results'],
+            'alerts': result['alerts'],
+            'robots_intelligence_score': result.get('robots_intelligence_score'),
+            'ai_accessibility': result.get('ai_accessibility'),
+            'risk_classification': result.get('risk_classification'),
+            'robots_diff': result.get('robots_diff'),
+            'portfolio_benchmark': result.get('portfolio_benchmark')
+        }
+        
+        supabase_client.table('checks').insert(check_data).execute()
+        print(f"Check saved to Supabase for site: {site['name']}")
+        
+    except Exception as e:
+        print(f"Error saving to Supabase: {e}")
+        # Fallback to local SQLite
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.execute(
+                """
+                INSERT INTO checks (
+                    checked_at, site_name, base_url, robots_url, status_code,
+                    final_url, content_hash, content, sitemaps_json, sitemap_details_json,
+                    important_url_results_json, alerts_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    result["checked_at"],
+                    site["name"],
+                    site["base_url"],
+                    result["robots_url"],
+                    result["status_code"],
+                    result["final_url"],
+                    result["content_hash"],
+                    result["content"],
+                    json.dumps(result["sitemaps"], ensure_ascii=False),
+                    json.dumps(result["sitemap_details"], ensure_ascii=False),
+                    json.dumps(result["important_url_results"], ensure_ascii=False),
+                    json.dumps(result["alerts"], ensure_ascii=False),
+                ),
+            )
+            conn.commit()
 
 
 def check_site(site):
