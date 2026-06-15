@@ -3,6 +3,9 @@ name: Run Robots.txt Monitor
 on:
   workflow_dispatch:
     inputs:
+      check_run_id:
+        description: 'Check run ID from Supabase'
+        required: false
       reason:
         description: 'Reason for running the monitor'
         required: false
@@ -25,6 +28,21 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install supabase
+      
+      - name: Update status to running
+        if: inputs.check_run_id != ''
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          CHECK_RUN_ID: ${{ inputs.check_run_id }}
+        run: |
+          python -c "
+          from supabase import create_client
+          import os
+          supabase = create_client(os.environ['SUPABASE_URL'], os.environ['SUPABASE_KEY'])
+          supabase.table('check_runs').update({'status': 'running', 'started_at': 'now()'}).eq('id', os.environ['CHECK_RUN_ID']).execute()
+          "
       
       - name: Run monitor script
         env:
@@ -33,5 +51,30 @@ jobs:
         run: |
           python monitor.py
       
-      - name: Monitor completed
-        run: echo "Monitor check completed successfully"
+      - name: Update status to completed
+        if: inputs.check_run_id != ''
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          CHECK_RUN_ID: ${{ inputs.check_run_id }}
+        run: |
+          python -c "
+          from supabase import create_client
+          import os
+          supabase = create_client(os.environ['SUPABASE_URL'], os.environ['SUPABASE_KEY'])
+          supabase.table('check_runs').update({'status': 'completed', 'completed_at': 'now()'}).eq('id', os.environ['CHECK_RUN_ID']).execute()
+          "
+      
+      - name: Update status to failed on error
+        if: failure() && inputs.check_run_id != ''
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          CHECK_RUN_ID: ${{ inputs.check_run_id }}
+        run: |
+          python -c "
+          from supabase import create_client
+          import os
+          supabase = create_client(os.environ['SUPABASE_URL'], os.environ['SUPABASE_KEY'])
+          supabase.table('check_runs').update({'status': 'failed', 'error_message': 'Monitor script failed', 'completed_at': 'now()'}).eq('id', os.environ['CHECK_RUN_ID']).execute()
+          "
