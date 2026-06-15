@@ -13,6 +13,14 @@ import requests
 import yaml
 
 from robots_policy import can_fetch_url
+from advertools_adapter import (
+    parse_robots_to_df,
+    extract_sitemaps_from_robots,
+    detect_robots_issues,
+    crawl_sitemap_with_advertools,
+    normalize_sitemap_dataframe,
+    analyze_robots_intelligence
+)
 
 DATA_DIR = Path("data")
 DB_PATH = DATA_DIR / "robots_monitor.sqlite3"
@@ -148,14 +156,9 @@ def fetch_bytes(url):
 
 
 def extract_sitemaps(robots_content):
-    sitemaps = []
-    for line in robots_content.splitlines():
-        stripped = line.strip()
-        if stripped.lower().startswith("sitemap:"):
-            sitemap_url = stripped.split(":", 1)[1].strip()
-            if sitemap_url:
-                sitemaps.append(sitemap_url)
-    return sorted(set(sitemaps))
+    """Extract sitemaps using advertools adapter for better parsing."""
+    robots_df = parse_robots_to_df(robots_content, "")
+    return extract_sitemaps_from_robots(robots_df)
 
 
 def site_matches_important_url(site, row):
@@ -222,6 +225,7 @@ def parse_sitemap_xml(content, url):
 
 
 def crawl_sitemaps(seed_sitemaps, max_depth=4):
+    """Crawl sitemaps using advertools adapter for intelligent parsing."""
     details = []
     discovered = set()
     queue = [(sitemap, 0, True, None) for sitemap in seed_sitemaps]
@@ -232,39 +236,27 @@ def crawl_sitemaps(seed_sitemaps, max_depth=4):
             continue
         discovered.add(sitemap_url)
 
+        # Use advertools adapter for sitemap crawling
+        sitemap_result = crawl_sitemap_with_advertools(sitemap_url)
+        
         detail = {
             "url": sitemap_url,
             "parent": parent,
             "declared_in_robots": declared_in_robots,
             "depth": depth,
-            "status_code": None,
-            "final_url": None,
-            "type": "unknown",
-            "url_count": 0,
-            "urls": [],
-            "child_count": 0,
-            "error": None,
+            "status_code": sitemap_result['status_code'],
+            "final_url": sitemap_result['final_url'],
+            "type": sitemap_result['type'],
+            "url_count": sitemap_result['url_count'],
+            "urls": sitemap_result['urls'],
+            "child_count": sitemap_result['child_count'],
+            "error": sitemap_result['error'],
         }
 
-        try:
-            status_code, final_url, content = fetch_bytes(sitemap_url)
-            detail["status_code"] = status_code
-            detail["final_url"] = final_url
-            if status_code >= 400:
-                detail["error"] = f"HTTP {status_code}"
-            else:
-                sitemap_type, parsed_items = parse_sitemap_xml(content, final_url)
-                detail["type"] = sitemap_type
-                if sitemap_type == "index":
-                    detail["child_count"] = len(parsed_items)
-                    if depth < max_depth:
-                        for child in parsed_items:
-                            queue.append((child["url"], depth + 1, False, sitemap_url))
-                elif sitemap_type == "urlset":
-                    detail["url_count"] = len(parsed_items)
-                    detail["urls"] = parsed_items
-        except (requests.RequestException, ElementTree.ParseError, gzip.BadGzipFile, OSError) as error:
-            detail["error"] = str(error)
+        # Handle sitemap index children
+        if sitemap_result['type'] == 'index' and depth < max_depth:
+            for child in sitemap_result['children']:
+                queue.append((child['url'], depth + 1, False, sitemap_url))
 
         details.append(detail)
 
@@ -432,12 +424,30 @@ def classify_alerts(site, status_code, content, sitemaps, sitemap_details, impor
     elif status_code >= 400:
         alerts.append(make_alert("high", "robots_http_error", f"robots.txt retourne {status_code}", url=robots_url(site["base_url"]), current_status=str(status_code)))
 
-    lowered = content.lower() if content else ""
-    if "disallow: /" in lowered:
-        alerts.append(make_alert("critical", "disallow_all", "Directive Disallow: / détectée", url=robots_url(site["base_url"]), current_status="blocked"))
+    # Use advertools adapter for intelligent robots analysis
+    if content:
+        robots_df = parse_robots_to_df(content, robots_url(site["base_url"]))
+        robots_issues = detect_robots_issues(robots_df)
+        robots_intelligence = analyze_robots_intelligence(robots_df, robots_issues)
+        
+        # Add alerts based on advertools analysis
+        for issue in robots_issues:
+            if issue['type'] == 'disallow_all':
+                alerts.append(make_alert("critical", "disallow_all", issue['description'], url=robots_url(site["base_url"]), current_status="blocked"))
+            elif issue['type'] == 'contradictory_directive':
+                alerts.append(make_alert("medium", "contradictory_directive", issue['description'], url=robots_url(site["base_url"]), current_status="contradictory"))
+            elif issue['type'] == 'ai_specific_rules':
+                alerts.append(make_alert("info", "ai_specific_rules", issue['description'], url=robots_url(site["base_url"]), current_status="ai_rules"))
+            elif issue['type'] == 'crawl_delay':
+                alerts.append(make_alert("info", "crawl_delay", issue['description'], url=robots_url(site["base_url"]), current_status="crawl_delay"))
+    else:
+        # Fallback to simple string matching if content is empty
+        lowered = content.lower() if content else ""
+        if "disallow: /" in lowered:
+            alerts.append(make_alert("critical", "disallow_all", "Directive Disallow: / détectée", url=robots_url(site["base_url"]), current_status="blocked"))
 
     for pattern in critical_patterns:
-        if pattern != "/" and f"disallow: {pattern.lower()}" in lowered:
+        if pattern != "/" and f"disallow: {pattern.lower()}" in (content.lower() if content else ""):
             alerts.append(make_alert("critical", "critical_pattern_blocked", f"Pattern critique bloqué: {pattern}", url=pattern, current_status="blocked"))
 
     if not sitemaps:
@@ -575,10 +585,12 @@ def check_site(site):
         important_url_results = []
         alerts = [make_alert("critical", "robots_network_error", f"Erreur réseau: {error}", url=url, current_status="network_error")]
     else:
+        # Use advertools adapter for sitemap extraction
         sitemaps = extract_sitemaps(content)
         sitemap_details = crawl_sitemaps(sitemaps)
         important_url_results = test_important_urls(site, content, sitemap_details, important_urls)
         alerts = classify_alerts(site, status_code, content, sitemaps, sitemap_details, important_url_results, previous)
+    
     result = {
         "checked_at": now_iso(),
         "robots_url": url,
@@ -591,6 +603,15 @@ def check_site(site):
         "important_url_results": important_url_results,
         "alerts": alerts,
     }
+    
+    # Add robots intelligence to result for dashboard display
+    if content:
+        robots_df = parse_robots_to_df(content, url)
+        robots_issues = detect_robots_issues(robots_df)
+        robots_intelligence = analyze_robots_intelligence(robots_df, robots_issues)
+        result["robots_intelligence"] = robots_intelligence
+        result["robots_issues"] = robots_issues
+    
     save_check(site, result)
     return result
 
@@ -624,6 +645,7 @@ def export_alerts_csv(results):
 
 
 def run_all(config_path="sites.yml"):
+    """Run all site checks using advertools-enhanced parsing."""
     init_db()
     sites = load_sites(config_path)
     results = []
