@@ -8,6 +8,10 @@ import streamlit as st
 from monitor import ALERTS_CSV_PATH, DB_PATH, init_db, run_all, summarize_crawl_policy
 
 st.set_page_config(page_title="Robots.txt Monitor", layout="wide")
+
+with open("style.css", encoding="utf-8") as file:
+    st.markdown(f"<style>{file.read()}</style>", unsafe_allow_html=True)
+
 st.title("Robots.txt Monitor")
 st.caption("Dashboard d'alerte multi-sites pour les fichiers robots.txt")
 
