@@ -1,0 +1,253 @@
+/* Noctua Design Template - Adapted for Streamlit */
+/* Based on the noctua-search-intelligence design system */
+
+:root {
+  --paper: #f7f1e7;
+  --paper-deep: #eee4d3;
+  --ink: #2c2924;
+  --petrol: #526a68;
+  --petrol-deep: #334848;
+  --tweed: #8b7a64;
+  --tweed-deep: #675848;
+  --copper: #c2915d;
+  --sand: #d7bd91;
+  --cream: #fff8ea;
+  --wash-blue: #dce8e5;
+  --shadow: rgba(67, 55, 43, 0.09);
+  --line: rgba(112, 91, 70, 0.18);
+}
+
+/* Global styles */
+.stApp {
+  background:
+    radial-gradient(circle at 18% 10%, rgba(194, 145, 93, 0.12), transparent 32%),
+    radial-gradient(circle at 82% 22%, rgba(82, 106, 104, 0.08), transparent 28%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.52), transparent 42%),
+    var(--paper);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* Subtle pattern overlay */
+.stApp::before {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(103, 88, 72, 0.035) 0 1px, transparent 1px),
+    radial-gradient(circle at 80% 70%, rgba(82, 106, 104, 0.03) 0 1px, transparent 1px),
+    linear-gradient(rgba(117, 97, 78, 0.02) 1px, transparent 1px);
+  background-size: 42px 42px;
+  content: "";
+  pointer-events: none;
+}
+
+/* Logo styling to remove white background */
+.stImage > img {
+  mix-blend-mode: multiply;
+  filter: saturate(0.88) contrast(0.96);
+}
+
+/* Header */
+.stApp h1 {
+  color: var(--petrol);
+  font-family: Georgia, serif;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.stApp .stCaption {
+  color: var(--tweed);
+  font-size: 0.95rem;
+}
+
+/* Cards and containers */
+div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlock"] {
+  background:
+    radial-gradient(circle at 18% 12%, rgba(194, 145, 93, 0.08), transparent 28%),
+    rgba(255, 248, 234, 0.56);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 18px 46px var(--shadow);
+  backdrop-filter: blur(2px);
+  margin: 16px 0;
+}
+
+/* DataFrames - Paper design like noctua */
+.stDataFrame {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(194, 145, 93, 0.08), transparent 28%),
+    var(--cream);
+  box-shadow: 0 18px 46px var(--shadow);
+  backdrop-filter: blur(2px);
+}
+
+.stDataFrame table {
+  background: transparent;
+  border-collapse: collapse;
+}
+
+.stDataFrame th {
+  background: var(--paper-deep);
+  color: var(--petrol);
+  font-family: Georgia, serif;
+  font-weight: 700;
+  padding: 14px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+  letter-spacing: -0.01em;
+}
+
+.stDataFrame td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  background: transparent;
+}
+
+.stDataFrame tr:last-child td {
+  border-bottom: none;
+}
+
+.stDataFrame tr:hover td {
+  background: rgba(194, 145, 93, 0.08);
+}
+
+/* Buttons */
+.stButton > button {
+  border: 1px solid rgba(82, 106, 104, 0.5);
+  border-radius: 999px;
+  background: var(--petrol);
+  color: var(--cream);
+  font-weight: 700;
+  box-shadow: 0 16px 36px rgba(82, 106, 104, 0.14);
+  transition: all 0.18s ease;
+}
+
+.stButton > button:hover {
+  background: var(--petrol-deep);
+  transform: translateY(-1px);
+}
+
+/* Download button */
+.stDownloadButton > button {
+  border: 1px solid var(--copper);
+  border-radius: 999px;
+  background: var(--copper);
+  color: var(--cream);
+  font-weight: 700;
+  box-shadow: 0 16px 36px rgba(194, 145, 93, 0.14);
+  transition: all 0.18s ease;
+}
+
+.stDownloadButton > button:hover {
+  background: var(--tweed);
+  transform: translateY(-1px);
+}
+
+/* Selectbox */
+.stSelectbox > div > div > div {
+  background: rgba(255, 248, 234, 0.8);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+/* Multiselect */
+.stMultiSelect > div > div > div {
+  background: rgba(255, 248, 234, 0.8);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+/* Info boxes */
+.stInfo {
+  background: var(--wash-blue);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--petrol);
+}
+
+.stSuccess {
+  background: rgba(82, 106, 104, 0.1);
+  border: 1px solid var(--petrol);
+  border-radius: 6px;
+  color: var(--petrol);
+}
+
+.stWarning {
+  background: rgba(194, 145, 93, 0.1);
+  border: 1px solid var(--copper);
+  border-radius: 6px;
+  color: var(--tweed);
+}
+
+.stError {
+  background: rgba(139, 122, 100, 0.1);
+  border: 1px solid var(--tweed-deep);
+  border-radius: 6px;
+  color: var(--tweed-deep);
+}
+
+/* Code blocks */
+.stCode {
+  background: var(--paper-deep);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+}
+
+/* Subheaders */
+.stApp h2 {
+  color: var(--petrol);
+  font-family: Georgia, serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-top: 24px;
+  margin-bottom: 16px;
+}
+
+/* Metrics and badges */
+.stMetric {
+  background: rgba(255, 248, 234, 0.6);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 16px;
+}
+
+/* Columns spacing */
+div[data-testid="column"] {
+  padding: 0 8px;
+}
+
+/* Expander */
+.stExpander {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: rgba(255, 248, 234, 0.4);
+}
+
+.stExpanderHeader {
+  color: var(--petrol);
+  font-weight: 600;
+}
+
+/* Sidebar */
+.css-1d391kg {
+  background:
+    radial-gradient(circle at 18% 10%, rgba(194, 145, 93, 0.08), transparent 32%),
+    var(--paper-deep);
+  border-right: 1px solid var(--line);
+}
+
+.css-1d391kg .stMarkdown {
+  color: var(--ink);
+}
+
+.css-1d391kg h3 {
+  color: var(--petrol);
+  font-family: Georgia, serif;
+}

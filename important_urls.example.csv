@@ -1,0 +1,4 @@
+site,url,type,priority
+Example,https://www.example.com/,homepage,high
+Example,https://www.example.com/products/example,conversion,high
+Example,https://www.example.com/blog/example,seo,medium

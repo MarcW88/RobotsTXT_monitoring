@@ -1,4 +1,15 @@
-# dependencies
+# Python
+__pycache__/
+*.pyc
+.env
+venv/
+.venv/
+data/
+sites.yml
+important_urls.csv
+.streamlit/secrets.toml
+
+# Node.js dependencies
 /node_modules
 /.pnp
 .pnp.js

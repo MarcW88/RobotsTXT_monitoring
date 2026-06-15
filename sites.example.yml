@@ -1,0 +1,9 @@
+sites:
+  - name: Example
+    base_url: https://www.example.com
+    critical_patterns:
+      - /
+      - /products/
+      - /collections/
+      - /blog/
+    known_sitemaps: []
