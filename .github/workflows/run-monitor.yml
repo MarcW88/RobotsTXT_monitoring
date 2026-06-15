@@ -34,4 +34,6 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
+          echo "SUPABASE_URL is set: $([ -n "$SUPABASE_URL" ] && echo "YES" || echo "NO")"
+          echo "SUPABASE_KEY is set: $([ -n "$SUPABASE_KEY" ] && echo "YES" || echo "NO")"
           python monitor.py
