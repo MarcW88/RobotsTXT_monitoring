@@ -1,8 +1,18 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Fraunces, Instrument_Sans } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: '--font-fraunces',
+  display: 'swap',
+});
+
+const instrumentSans = Instrument_Sans({
+  subsets: ["latin"],
+  variable: '--font-instrument-sans',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: "Robots.txt Monitoring Dashboard",
@@ -16,7 +26,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className={`${fraunces.variable} ${instrumentSans.variable}`}>{children}</body>
     </html>
   );
 }

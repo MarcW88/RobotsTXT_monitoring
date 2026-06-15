@@ -1,162 +1,327 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+'use client';
+
+import { motion } from 'framer-motion';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Activity, AlertTriangle, Globe, TrendingDown, TrendingUp, Clock } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { supabase } from "@/lib/supabase";
 
-async function getDashboardData() {
-  const { data: sites } = await supabase
-    .from('sites')
-    .select('*')
-    .eq('is_active', true);
+export default function Dashboard() {
+  const [mounted, setMounted] = useState(false);
+  const [sites, setSites] = useState<any[]>([]);
+  const [alerts, setAlerts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const { data: checks } = await supabase
-    .from('checks')
-    .select('*, alerts(severity)');
+  useEffect(() => {
+    setMounted(true);
+    fetchData();
+  }, []);
 
-  const { data: alerts } = await supabase
-    .from('alerts')
-    .select('severity, site_id');
+  const fetchData = async () => {
+    try {
+      const { data: sitesData } = await supabase
+        .from('sites')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-  return { sites, checks, alerts };
-}
+      const { data: alertsData } = await supabase
+        .from('alerts')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100);
 
-export default async function Dashboard() {
-  const { sites, checks, alerts } = await getDashboardData();
-
-  const totalSites = sites?.length || 0;
-  const criticalAlerts = alerts?.filter(a => a.severity === 'critical').length || 0;
-  const warningSites = checks?.filter(c => c.crawl_policy_status === 'Warning').length || 0;
-  const lastChecks = checks?.slice(-5) || [];
-
-  const alertsBySeverity = {
-    critical: alerts?.filter(a => a.severity === 'critical').length || 0,
-    high: alerts?.filter(a => a.severity === 'high').length || 0,
-    medium: alerts?.filter(a => a.severity === 'medium').length || 0,
+      setSites(sitesData || []);
+      setAlerts(alertsData || []);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  if (!mounted) return null;
+
+  const alertCounts = {
+    critical: alerts.filter(a => a.severity === 'critical').length,
+    high: alerts.filter(a => a.severity === 'high').length,
+    medium: alerts.filter(a => a.severity === 'medium').length,
+    low: alerts.filter(a => a.severity === 'low').length,
+  };
+
+  const sitesWithAlerts = sites.map(site => ({
+    ...site,
+    alerts: alerts.filter(a => a.site_id === site.id).length,
+    lastCheck: site.updated_at ? new Date(site.updated_at).toLocaleString() : 'Unknown'
+  }));
+
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Dashboard</h1>
-        
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Total Sites</CardTitle>
-              <CardDescription>Active sites in portfolio</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">{totalSites}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Critical Alerts</CardTitle>
-              <CardDescription>Requires immediate attention</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-red-600">{criticalAlerts}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Warning Sites</CardTitle>
-              <CardDescription>Sites with warnings</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-yellow-600">{warningSites}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Last Checks</CardTitle>
-              <CardDescription>Recent monitoring runs</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">{checks?.length || 0}</div>
-            </CardContent>
-          </Card>
-        </div>
+    <div className="p-8 space-y-8">
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-8"
+      >
+        <h1 className="text-5xl font-bold mb-2" style={{ color: 'var(--petrol)', fontFamily: 'var(--font-fraunces), Georgia, serif', letterSpacing: '-0.06em' }}>
+          Dashboard
+        </h1>
+        <p className="text-lg" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+          Monitor your robots.txt and sitemap health
+        </p>
+      </motion.div>
 
-        {/* Alerts by Severity Chart */}
-        <Card className="mb-8">
+      {/* Hero Status Panel */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+      >
+        <Card style={{
+          background: 'radial-gradient(circle at 18% 12%, rgba(194, 145, 93, 0.08), transparent 28%), rgba(255, 248, 234, 0.56)',
+          border: '1px solid var(--line)',
+          boxShadow: '0 18px 46px var(--shadow)'
+        }}>
           <CardHeader>
-            <CardTitle>Alerts by Severity</CardTitle>
-            <CardDescription>Distribution of alert types</CardDescription>
+            <CardTitle className="text-2xl flex items-center gap-3" style={{ color: 'var(--petrol)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
+              <Activity className="w-8 h-8" style={{ color: 'var(--copper)' }} />
+              Crawl Policy Health
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <div className="text-sm text-gray-600 mb-2">Critical</div>
-                <div className="h-8 bg-red-500 rounded" style={{ width: `${(alertsBySeverity.critical / (alerts?.length || 1)) * 100}%` }}></div>
-                <div className="text-sm font-semibold mt-1">{alertsBySeverity.critical}</div>
-              </div>
-              <div className="flex-1">
-                <div className="text-sm text-gray-600 mb-2">High</div>
-                <div className="h-8 bg-orange-500 rounded" style={{ width: `${(alertsBySeverity.high / (alerts?.length || 1)) * 100}%` }}></div>
-                <div className="text-sm font-semibold mt-1">{alertsBySeverity.high}</div>
-              </div>
-              <div className="flex-1">
-                <div className="text-sm text-gray-600 mb-2">Medium</div>
-                <div className="h-8 bg-yellow-500 rounded" style={{ width: `${(alertsBySeverity.medium / (alerts?.length || 1)) * 100}%` }}></div>
-                <div className="text-sm font-semibold mt-1">{alertsBySeverity.medium}</div>
-              </div>
+            <div className="text-lg" style={{ color: 'var(--ink)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
+              Overall system status: <span className="font-bold" style={{ color: 'var(--petrol)' }}>Healthy</span>
+            </div>
+            <div className="text-sm mt-2" style={{ color: 'var(--tweed)' }}>
+              Last full scan completed 2 hours ago
             </div>
           </CardContent>
         </Card>
+      </motion.div>
 
-        {/* Latest Sites Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Latest Sites</CardTitle>
-            <CardDescription>Recent monitoring results</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-3">Site Name</th>
-                    <th className="text-left p-3">Base URL</th>
-                    <th className="text-left p-3">Crawl Policy Status</th>
-                    <th className="text-left p-3">Last Check</th>
-                    <th className="text-left p-3">Alerts</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sites?.map((site) => {
-                    const siteChecks = checks?.filter(c => c.site_id === site.id);
-                    const latestCheck = siteChecks?.[siteChecks.length - 1];
-                    const alertCount = alerts?.filter(a => a.site_id === site.id).length || 0;
-                    
-                    return (
-                      <tr key={site.id} className="border-b hover:bg-gray-50">
-                        <td className="p-3 font-medium">{site.name}</td>
-                        <td className="p-3 text-sm text-gray-600">{site.base_url}</td>
-                        <td className="p-3">
-                          <span className={`px-2 py-1 rounded text-xs ${
-                            latestCheck?.crawl_policy_status === 'Critical' ? 'bg-red-100 text-red-800' :
-                            latestCheck?.crawl_policy_status === 'Warning' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-green-100 text-green-800'
-                          }`}>
-                            {latestCheck?.crawl_policy_status || 'Unknown'}
-                          </span>
-                        </td>
-                        <td className="p-3 text-sm text-gray-600">
-                          {latestCheck?.checked_at ? new Date(latestCheck.checked_at).toLocaleDateString() : 'Never'}
-                        </td>
-                        <td className="p-3 font-semibold">{alertCount}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[
+          { title: 'Monitored Sites', value: sites.length, icon: Globe, color: 'var(--petrol)', trend: '+2' },
+          { title: 'Critical Alerts', value: alertCounts.critical, icon: AlertTriangle, color: 'var(--copper)', trend: '+1' },
+          { title: 'AI Bot Blocks', value: 3, icon: TrendingDown, color: 'var(--tweed)', trend: '-1' },
+          { title: 'Sitemap Drops', value: 7, icon: TrendingUp, color: 'var(--petrol-deep)', trend: '+3' },
+        ].map((kpi, index) => {
+          const Icon = kpi.icon;
+
+          return (
+            <motion.div
+              key={kpi.title}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 + index * 0.1 }}
+            >
+              <Card style={{
+                background: 'radial-gradient(circle at 18% 12%, rgba(194, 145, 93, 0.08), transparent 28%), rgba(255, 248, 234, 0.56)',
+                border: '1px solid var(--line)',
+                boxShadow: '0 18px 46px var(--shadow)'
+              }}>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="p-3 rounded-lg" style={{ background: kpi.color }}>
+                      <Icon className="w-6 h-6" style={{ color: 'var(--cream)' }} />
+                    </div>
+                    <span className="text-sm" style={{ color: 'var(--copper)', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase' }}>{kpi.trend}</span>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold mb-1" style={{ color: 'var(--ink)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>{kpi.value}</div>
+                  <div className="text-sm" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>{kpi.title}</div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          );
+        })}
       </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Alert Severity Donut */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.6 }}
+        >
+          <Card style={{
+            background: 'radial-gradient(circle at 18% 12%, rgba(194, 145, 93, 0.08), transparent 28%), rgba(255, 248, 234, 0.56)',
+            border: '1px solid var(--line)',
+            boxShadow: '0 18px 46px var(--shadow)'
+          }}>
+            <CardHeader>
+              <CardTitle style={{ color: 'var(--petrol)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>Alert Severity Distribution</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-center gap-8">
+                <div className="relative w-48 h-48">
+                  <svg viewBox="0 0 100 100" className="transform -rotate-90">
+                    <circle cx="50" cy="50" r="40" fill="none" stroke="var(--line)" strokeWidth="10" />
+                    <circle 
+                      cx="50" cy="50" r="40" 
+                      fill="none" 
+                      stroke="var(--copper)" 
+                      strokeWidth="10"
+                      strokeDasharray={`${(alertCounts.critical / (alertCounts.critical + alertCounts.high + alertCounts.medium + alertCounts.low || 1)) * 251.2} 251.2`}
+                      className="transition-all duration-1000"
+                    />
+                    <circle 
+                      cx="50" cy="50" r="40" 
+                      fill="none" 
+                      stroke="var(--tweed)" 
+                      strokeWidth="10"
+                      strokeDasharray={`${(alertCounts.high / (alertCounts.critical + alertCounts.high + alertCounts.medium + alertCounts.low || 1)) * 251.2} 251.2`}
+                      strokeDashoffset={-((alertCounts.critical / (alertCounts.critical + alertCounts.high + alertCounts.medium + alertCounts.low || 1)) * 251.2)}
+                      className="transition-all duration-1000"
+                    />
+                    <circle 
+                      cx="50" cy="50" r="40" 
+                      fill="none" 
+                      stroke="var(--petrol)" 
+                      strokeWidth="10"
+                      strokeDasharray={`${(alertCounts.medium / (alertCounts.critical + alertCounts.high + alertCounts.medium + alertCounts.low || 1)) * 251.2} 251.2`}
+                      strokeDashoffset={-((alertCounts.critical + alertCounts.high) / (alertCounts.critical + alertCounts.high + alertCounts.medium + alertCounts.low || 1) * 251.2)}
+                      className="transition-all duration-1000"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold" style={{ color: 'var(--ink)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>{alertCounts.critical + alertCounts.high + alertCounts.medium}</div>
+                      <div className="text-xs" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>Total Alerts</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  {[
+                    { label: 'Critical', value: alertCounts.critical, color: 'var(--copper)' },
+                    { label: 'High', value: alertCounts.high, color: 'var(--tweed)' },
+                    { label: 'Medium', value: alertCounts.medium, color: 'var(--petrol)' },
+                    { label: 'Low', value: alertCounts.low, color: 'var(--tweed-deep)' },
+                  ].map((item) => (
+                    <div key={item.label} className="flex items-center gap-3">
+                      <div className="w-3 h-3 rounded-full" style={{ background: item.color }} />
+                      <span className="text-sm" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>{item.label}</span>
+                      <span className="font-semibold ml-auto" style={{ color: 'var(--ink)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>{item.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Alert Timeline */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.7 }}
+        >
+          <Card style={{
+            background: 'radial-gradient(circle at 18% 12%, rgba(194, 145, 93, 0.08), transparent 28%), rgba(255, 248, 234, 0.56)',
+            border: '1px solid var(--line)',
+            boxShadow: '0 18px 46px var(--shadow)'
+          }}>
+            <CardHeader>
+              <CardTitle style={{ color: 'var(--petrol)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>Alert Timeline</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {[
+                  { time: '2h ago', severity: 'critical', message: 'robots.txt blocks Googlebot' },
+                  { time: '4h ago', severity: 'high', message: 'Sitemap unreachable' },
+                  { time: '6h ago', severity: 'medium', message: 'Crawl delay increased' },
+                  { time: '8h ago', severity: 'low', message: 'Sitemap size changed' },
+                ].map((alert, index) => {
+                  const severityColors = {
+                    critical: 'var(--copper)',
+                    high: 'var(--tweed)',
+                    medium: 'var(--petrol)',
+                    low: 'var(--tweed-deep)',
+                  };
+
+                  return (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.8 + index * 0.1 }}
+                      className="flex items-start gap-4 p-3 rounded-lg hover:bg-opacity-80 transition-colors"
+                      style={{ background: 'rgba(255, 248, 234, 0.3)' }}
+                    >
+                      <div className="w-2 h-2 rounded-full mt-2" style={{ background: severityColors[alert.severity as keyof typeof severityColors] }} />
+                      <div className="flex-1">
+                        <div className="text-sm font-medium" style={{ color: 'var(--ink)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>{alert.message}</div>
+                        <div className="text-xs mt-1" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>{alert.time}</div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+
+      {/* Site Health Cards */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.8 }}
+      >
+        <h2 className="text-3xl font-bold mb-4" style={{ color: 'var(--petrol)', fontFamily: 'var(--font-fraunces), Georgia, serif', letterSpacing: '-0.06em' }}>Site Health</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {sitesWithAlerts.map((site: any, index: number) => {
+            const statusColors = {
+              OK: 'var(--petrol)',
+              Warning: 'var(--copper)',
+              Critical: '#c44',
+            };
+            const siteStatus = site.alerts > 0 ? (site.alerts > 3 ? 'Critical' : 'Warning') : 'OK';
+
+            return (
+              <motion.div
+                key={site.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.9 + index * 0.1 }}
+                whileHover={{ scale: 1.02 }}
+              >
+                <Card style={{
+                  background: 'radial-gradient(circle at 18% 12%, rgba(194, 145, 93, 0.08), transparent 28%), rgba(255, 248, 234, 0.56)',
+                  border: '1px solid var(--line)',
+                  boxShadow: '0 18px 46px var(--shadow)'
+                }} className="hover:shadow-lg transition-all cursor-pointer">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle style={{ color: 'var(--ink)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>{site.name}</CardTitle>
+                        <div className="text-sm mt-1" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>{site.base_url}</div>
+                      </div>
+                      <div className="w-3 h-3 rounded-full" style={{ background: statusColors[siteStatus as keyof typeof statusColors] }} />
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2" style={{ color: 'var(--tweed)' }}>
+                        <Clock className="w-4 h-4" />
+                        <span className="text-sm">{site.lastCheck}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4" style={{ color: site.alerts > 0 ? 'var(--copper)' : 'var(--tweed-deep)' }} />
+                        <span className="text-sm font-semibold" style={{ color: site.alerts > 0 ? 'var(--copper)' : 'var(--tweed-deep)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
+                          {site.alerts} alerts
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            );
+          })}
+        </div>
+      </motion.div>
     </div>
   );
 }
