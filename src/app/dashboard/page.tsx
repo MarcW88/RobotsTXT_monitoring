@@ -13,7 +13,7 @@ async function getDashboardData() {
 
   const { data: alerts } = await supabase
     .from('alerts')
-    .select('severity');
+    .select('severity, site_id');
 
   return { sites, checks, alerts };
 }
