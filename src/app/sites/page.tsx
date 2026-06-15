@@ -40,6 +40,7 @@ export default function SitesPage() {
   };
 
   const checkAllSites = async () => {
+    console.log('Starting check...');
     setChecking(true);
     // Initialize progress for all sites
     const initialProgress: {[key: string]: 'pending' | 'checking' | 'done' | 'error'} = {};
@@ -49,9 +50,12 @@ export default function SitesPage() {
     setCheckProgress(initialProgress);
 
     try {
+      console.log('Calling /api/run-check...');
       const response = await fetch('/api/run-check', {
         method: 'POST',
       });
+      
+      console.log('Response status:', response.status);
       
       if (response.ok) {
         const data = await response.json();
@@ -66,21 +70,30 @@ export default function SitesPage() {
         
         // After a delay, mark as done (in reality, you'd poll for actual status)
         setTimeout(() => {
+          console.log('Marking as done and refreshing data...');
           const doneProgress: {[key: string]: 'pending' | 'checking' | 'done' | 'error'} = {};
           sites.forEach(site => {
             doneProgress[site.id] = 'done';
           });
           setCheckProgress(doneProgress);
           fetchData();
-        }, 5000);
+          
+          // Reset checking state after data refresh
+          setTimeout(() => {
+            setChecking(false);
+          }, 2000);
+        }, 10000); // Increased to 10 seconds
       } else {
-        console.error('Failed to launch check');
+        console.error('Failed to launch check, status:', response.status);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
         // Mark all as error
         const errorProgress: {[key: string]: 'pending' | 'checking' | 'done' | 'error'} = {};
         sites.forEach(site => {
           errorProgress[site.id] = 'error';
         });
         setCheckProgress(errorProgress);
+        setChecking(false);
       }
     } catch (error) {
       console.error('Error launching check:', error);
@@ -90,11 +103,7 @@ export default function SitesPage() {
         errorProgress[site.id] = 'error';
       });
       setCheckProgress(errorProgress);
-    } finally {
-      // Don't set checking to false immediately - let the progress show
-      setTimeout(() => {
-        setChecking(false);
-      }, 6000);
+      setChecking(false);
     }
   };
 
