@@ -14,6 +14,7 @@ export default function SitesPage() {
   const [loading, setLoading] = useState(true);
   const [checking, setChecking] = useState(false);
   const [checkStatus, setCheckStatus] = useState<'idle' | 'running' | 'completed' | 'failed'>('idle');
+  const [currentSiteIndex, setCurrentSiteIndex] = useState(0);
 
   useEffect(() => {
     fetchData();
@@ -44,6 +45,7 @@ export default function SitesPage() {
     console.log('Starting check...');
     setChecking(true);
     setCheckStatus('running');
+    setCurrentSiteIndex(0);
 
     try {
       console.log('Calling /api/run-check...');
@@ -57,15 +59,22 @@ export default function SitesPage() {
         const data = await response.json();
         console.log('Check launched:', data);
         
-        // Wait for GitHub Actions to complete (approx 1 minute)
-        setTimeout(async () => {
-          await fetchData();
-          setCheckStatus('completed');
-          setTimeout(() => {
-            setChecking(false);
-            setCheckStatus('idle');
-          }, 3000);
-        }, 60000); // 1 minute
+        // Simulate site checking progress
+        const totalSites = sites.length;
+        const timePerSite = 60000 / totalSites; // Distribute 1 minute across sites
+        
+        for (let i = 0; i < totalSites; i++) {
+          setCurrentSiteIndex(i);
+          await new Promise(resolve => setTimeout(resolve, timePerSite));
+        }
+        
+        await fetchData();
+        setCheckStatus('completed');
+        setTimeout(() => {
+          setChecking(false);
+          setCheckStatus('idle');
+          setCurrentSiteIndex(0);
+        }, 3000);
       } else {
         console.error('Failed to launch check');
         setCheckStatus('failed');
@@ -134,16 +143,26 @@ export default function SitesPage() {
             border: '1px solid var(--line)'
           }}
         >
-          <div className="flex items-center gap-3">
-            <div className="w-3 h-3 rounded-full animate-pulse" style={{ 
-              background: checkStatus === 'running' ? 'var(--petrol)' : 
-                        checkStatus === 'completed' ? 'var(--petrol)' : 'var(--copper)'
-            }} />
-            <span className="font-medium" style={{ fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
-              {checkStatus === 'running' && 'Check running - monitoring robots.txt files via GitHub Actions...'}
-              {checkStatus === 'completed' && 'Check completed! Data refreshed.'}
-              {checkStatus === 'failed' && 'Check failed - please check GitHub Actions for errors'}
-            </span>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: 'var(--paper-deep)' }}>
+                <motion.div
+                  initial={{ width: '0%' }}
+                  animate={{ width: `${((currentSiteIndex + 1) / sites.length) * 100}%` }}
+                  transition={{ duration: 0.5 }}
+                  className="h-full"
+                  style={{ background: 'var(--petrol)' }}
+                />
+              </div>
+              <span className="text-sm whitespace-nowrap" style={{ fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                {currentSiteIndex + 1}/{sites.length}
+              </span>
+            </div>
+            {sites[currentSiteIndex] && (
+              <div className="text-sm" style={{ fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif', color: 'var(--tweed)' }}>
+                Checking: {sites[currentSiteIndex].name}
+              </div>
+            )}
           </div>
         </motion.div>
       )}
