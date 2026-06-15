@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Globe, AlertTriangle, Clock, Play, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { Globe, AlertTriangle, Clock, Play } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from "@/lib/supabase";
 import Link from 'next/link';
@@ -12,7 +12,6 @@ export default function SitesPage() {
   const [alerts, setAlerts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [checking, setChecking] = useState(false);
-  const [checkProgress, setCheckProgress] = useState<{[key: string]: 'pending' | 'checking' | 'done' | 'error'}>({});
 
   useEffect(() => {
     fetchData();
@@ -41,12 +40,6 @@ export default function SitesPage() {
 
   const checkAllSites = async () => {
     setChecking(true);
-    // Initialize progress for all sites
-    const initialProgress: {[key: string]: 'pending' | 'checking' | 'done' | 'error'} = {};
-    sites.forEach(site => {
-      initialProgress[site.id] = 'pending';
-    });
-    setCheckProgress(initialProgress);
 
     try {
       const response = await fetch('/api/run-check', {
@@ -56,45 +49,16 @@ export default function SitesPage() {
       if (response.ok) {
         const data = await response.json();
         console.log('Check launched:', data);
-        
-        // Mark all as checking (the actual check runs in GitHub Actions)
-        const checkingProgress: {[key: string]: 'pending' | 'checking' | 'done' | 'error'} = {};
-        sites.forEach(site => {
-          checkingProgress[site.id] = 'checking';
-        });
-        setCheckProgress(checkingProgress);
-        
-        // After a delay, mark as done (in reality, you'd poll for actual status)
-        setTimeout(() => {
-          const doneProgress: {[key: string]: 'pending' | 'checking' | 'done' | 'error'} = {};
-          sites.forEach(site => {
-            doneProgress[site.id] = 'done';
-          });
-          setCheckProgress(doneProgress);
-          fetchData();
-        }, 5000);
+        alert('Check launched successfully! The GitHub Actions workflow is running. Check the Actions tab in GitHub for progress.');
       } else {
         console.error('Failed to launch check');
-        // Mark all as error
-        const errorProgress: {[key: string]: 'pending' | 'checking' | 'done' | 'error'} = {};
-        sites.forEach(site => {
-          errorProgress[site.id] = 'error';
-        });
-        setCheckProgress(errorProgress);
+        alert('Failed to launch check. Please check the console for errors.');
       }
     } catch (error) {
       console.error('Error launching check:', error);
-      // Mark all as error
-      const errorProgress: {[key: string]: 'pending' | 'checking' | 'done' | 'error'} = {};
-      sites.forEach(site => {
-        errorProgress[site.id] = 'error';
-      });
-      setCheckProgress(errorProgress);
+      alert('Error launching check. Please check the console for errors.');
     } finally {
-      // Don't set checking to false immediately - let the progress show
-      setTimeout(() => {
-        setChecking(false);
-      }, 6000);
+      setChecking(false);
     }
   };
 
@@ -182,36 +146,6 @@ export default function SitesPage() {
                         </span>
                       </div>
                     </div>
-                    
-                    {/* Progress indicator */}
-                    {checking && checkProgress[site.id] && (
-                      <div className="flex items-center gap-2 p-2 rounded" style={{ background: 'rgba(255, 248, 234, 0.5)' }}>
-                        {checkProgress[site.id] === 'pending' && (
-                          <>
-                            <div className="w-4 h-4 rounded-full border-2" style={{ borderColor: 'var(--tweed)' }} />
-                            <span className="text-xs" style={{ color: 'var(--tweed)' }}>Pending</span>
-                          </>
-                        )}
-                        {checkProgress[site.id] === 'checking' && (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin" style={{ color: 'var(--petrol)' }} />
-                            <span className="text-xs" style={{ color: 'var(--petrol)' }}>Checking...</span>
-                          </>
-                        )}
-                        {checkProgress[site.id] === 'done' && (
-                          <>
-                            <CheckCircle className="w-4 h-4" style={{ color: 'var(--petrol)' }} />
-                            <span className="text-xs" style={{ color: 'var(--petrol)' }}>Done</span>
-                          </>
-                        )}
-                        {checkProgress[site.id] === 'error' && (
-                          <>
-                            <XCircle className="w-4 h-4" style={{ color: 'var(--copper)' }} />
-                            <span className="text-xs" style={{ color: 'var(--copper)' }}>Error</span>
-                          </>
-                        )}
-                      </div>
-                    )}
                   </CardContent>
                 </Card>
               </motion.div>
