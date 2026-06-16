@@ -209,7 +209,10 @@ def crawl_sitemap_with_advertools(sitemap_url: str, max_depth: int = 4) -> Dict:
         response = requests.get(
             sitemap_url,
             timeout=DEFAULT_TIMEOUT,
-            headers={'User-Agent': 'RobotsTxtMonitor/0.1'}
+            headers={
+                'User-Agent': 'Mozilla/5.0 (compatible; RobotsTxtMonitor/1.0; +https://github.com/MarcW88/RobotsTXT_monitoring)',
+                'Accept': 'application/xml,text/xml,*/*;q=0.8',
+            }
         )
         result['status_code'] = response.status_code
         result['final_url'] = response.url
