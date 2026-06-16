@@ -6,12 +6,14 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Globe, AlertTriangle, FileText, Activity, Clock, TrendingUp, Shield, Bot } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from "@/lib/supabase";
+import { Sidebar } from "@/components/sidebar";
 
 export default function SiteDetail({ params }: { params: { id: string } }) {
   const [activeTab, setActiveTab] = useState('overview');
   const [site, setSite] = useState<any>(null);
   const [alerts, setAlerts] = useState<any[]>([]);
   const [sitemaps, setSitemaps] = useState<any[]>([]);
+  const [check, setCheck] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -40,9 +42,18 @@ export default function SiteDetail({ params }: { params: { id: string } }) {
         .order('created_at', { ascending: false })
         .limit(10);
 
+      const { data: checkData } = await supabase
+        .from('checks')
+        .select('*')
+        .eq('site_id', params.id)
+        .order('checked_at', { ascending: false })
+        .limit(1)
+        .single();
+
       setSite(siteData);
       setAlerts(alertsData || []);
       setSitemaps(sitemapsData || []);
+      setCheck(checkData);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -64,7 +75,9 @@ export default function SiteDetail({ params }: { params: { id: string } }) {
   const crawlPolicySummary = siteAlerts > 0 ? `${siteAlerts} alerts detected` : 'No issues detected';
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="flex">
+      <Sidebar />
+      <div className="flex-1 p-8 space-y-8">
       {/* Visual Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -398,32 +411,24 @@ export default function SiteDetail({ params }: { params: { id: string } }) {
             </CardHeader>
             <CardContent>
               <div className="rounded-lg p-6 font-mono text-sm" style={{ background: 'var(--paper-deep)' }}>
-                <pre style={{ color: 'var(--ink)' }}>
-{`User-agent: *
-Allow: /
-Disallow: /admin
-Disallow: /api
-Disallow: /private
-
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-Crawl-delay: 10
-Sitemap: https://example.com/sitemap.xml`}
+                <pre style={{ color: 'var(--ink)', whiteSpace: 'pre-wrap' }}>
+                  {check?.content || 'No robots.txt content available'}
                 </pre>
               </div>
               <div className="mt-4 flex items-center gap-4 text-sm" style={{ color: 'var(--tweed)' }}>
                 <Activity className="w-4 h-4" />
-                <span style={{ fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>Last updated: 2 days ago</span>
-                <span className="ml-auto" style={{ fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>2 rules detected</span>
+                <span style={{ fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                  Last updated: {check?.checked_at ? new Date(check.checked_at).toLocaleString() : 'Unknown'}
+                </span>
+                <span className="ml-auto" style={{ fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                  Status: {check?.status_code || 'Unknown'}
+                </span>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   );
 }
