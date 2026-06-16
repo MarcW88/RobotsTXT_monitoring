@@ -2,12 +2,14 @@
 
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertTriangle, Clock } from 'lucide-react';
+import { AlertTriangle, Clock, ExternalLink } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { supabase } from "@/lib/supabase";
 
 export default function AlertsPage() {
   const [alerts, setAlerts] = useState<any[]>([]);
+  const [sites, setSites] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -22,7 +24,12 @@ export default function AlertsPage() {
         .order('created_at', { ascending: false })
         .limit(100);
 
+      const { data: sitesData } = await supabase
+        .from('sites')
+        .select('id,name,base_url');
+
       setAlerts(alertsData || []);
+      setSites(sitesData || []);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -31,6 +38,7 @@ export default function AlertsPage() {
   };
 
   if (loading) return <div className="p-8">Loading...</div>;
+  const siteById = Object.fromEntries(sites.map(site => [site.id, site]));
 
   return (
     <div className="p-8 space-y-8">
@@ -47,7 +55,10 @@ export default function AlertsPage() {
       </motion.div>
 
       <div className="space-y-4">
-        {alerts.map((alert: any, index: number) => (
+        {alerts.map((alert: any, index: number) => {
+          const site = siteById[alert.site_id];
+
+          return (
           <motion.div
             key={alert.id}
             initial={{ opacity: 0, y: 20 }}
@@ -83,16 +94,22 @@ export default function AlertsPage() {
                       <span className="text-sm ml-auto" style={{ color: 'var(--tweed)' }}>{alert.created_at ? new Date(alert.created_at).toLocaleString() : 'Unknown'}</span>
                     </div>
                     <p className="mb-3" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>{alert.message}</p>
-                    <div className="flex items-center gap-2" style={{ color: 'var(--tweed)' }}>
+                    <div className="flex flex-wrap items-center gap-4" style={{ color: 'var(--tweed)' }}>
                       <Clock className="w-4 h-4" />
-                      <span className="text-sm">Site ID: {alert.site_id}</span>
+                      <Link href={`/sites/${alert.site_id}`} className="text-sm font-semibold inline-flex items-center gap-1" style={{ color: 'var(--petrol)' }}>
+                        {site?.name || 'Unknown site'}
+                        <ExternalLink className="w-3 h-3" />
+                      </Link>
+                      {site?.base_url && <span className="text-sm">{site.base_url}</span>}
+                      {alert.url && <span className="text-sm">Affected URL: {alert.url}</span>}
                     </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </motion.div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

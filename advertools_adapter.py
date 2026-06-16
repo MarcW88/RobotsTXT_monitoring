@@ -206,6 +206,16 @@ def crawl_sitemap_with_advertools(sitemap_url: str, max_depth: int = 4) -> Dict:
     }
     
     try:
+        try:
+            sitemap_df = adv.sitemap_to_df(sitemap_url)
+            if not sitemap_df.empty:
+                loc_column = 'loc' if 'loc' in sitemap_df.columns else sitemap_df.columns[0]
+                result['urls'] = sitemap_df[loc_column].dropna().astype(str).unique().tolist()
+                result['url_count'] = len(result['urls'])
+                result['type'] = 'urlset'
+        except Exception as e:
+            result['error'] = f'advertools parsing error: {e}'
+
         response = requests.get(
             sitemap_url,
             timeout=DEFAULT_TIMEOUT,
@@ -238,7 +248,8 @@ def crawl_sitemap_with_advertools(sitemap_url: str, max_depth: int = 4) -> Dict:
             if root_name == 'sitemapindex':
                 result['type'] = 'index'
                 for sitemap in root:
-                    if sitemap.tag.split('}', 1)[-1] if '}' in sitemap.tag else sitemap.tag != 'sitemap':
+                    sitemap_tag = sitemap.tag.split('}', 1)[-1] if '}' in sitemap.tag else sitemap.tag
+                    if sitemap_tag != 'sitemap':
                         continue
                     loc = None
                     lastmod = None
@@ -254,23 +265,25 @@ def crawl_sitemap_with_advertools(sitemap_url: str, max_depth: int = 4) -> Dict:
                 
             elif root_name == 'urlset':
                 result['type'] = 'urlset'
-                for url_node in root:
-                    if url_node.tag.split('}', 1)[-1] if '}' in url_node.tag else url_node.tag != 'url':
-                        continue
-                    loc = None
-                    for child in url_node:
-                        child_name = child.tag.split('}', 1)[-1] if '}' in child.tag else child.tag
-                        if child_name == 'loc':
-                            loc = child.text.strip() if child.text else None
-                            break
-                    if loc:
-                        result['urls'].append(loc)
-                result['url_count'] = len(result['urls'])
+                if result['url_count'] == 0:
+                    for url_node in root:
+                        url_tag = url_node.tag.split('}', 1)[-1] if '}' in url_node.tag else url_node.tag
+                        if url_tag != 'url':
+                            continue
+                        loc = None
+                        for child in url_node:
+                            child_name = child.tag.split('}', 1)[-1] if '}' in child.tag else child.tag
+                            if child_name == 'loc':
+                                loc = child.text.strip() if child.text else None
+                                break
+                        if loc:
+                            result['urls'].append(loc)
+                    result['url_count'] = len(result['urls'])
             else:
-                result['error'] = f'Unknown root element: {root_name}'
+                result['error'] = result['error'] or f'Unknown root element: {root_name}'
                 
         except ElementTree.ParseError as e:
-            result['error'] = f'XML parsing error: {e}'
+            result['error'] = result['error'] or f'XML parsing error: {e}'
             
     except requests.RequestException as e:
         result['error'] = f'Network error: {e}'

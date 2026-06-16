@@ -145,6 +145,7 @@ export default function Dashboard() {
       score,
       aiScore,
       impactedUrls,
+      alertCount: siteAlerts.length,
       criticalAlerts,
       lastIssue: siteAlerts[0]?.message || 'No major issue detected'
     };
@@ -177,7 +178,9 @@ export default function Dashboard() {
     : chartPadding + (index / (daysElapsed.length - 1)) * (chartWidth - chartPadding * 2);
   const yForScore = (score: number) => chartHeight - chartPadding - ((score - minScore) / Math.max(1, maxScore - minScore)) * (chartHeight - chartPadding * 2);
   const scorePoints = scoreByDay.map((score, index) => typeof score === 'number' ? `${xForDay(index)},${yForScore(score)}` : null).filter(Boolean).join(' ');
-  const prioritySites = [...latestChecksBySite].sort((a, b) => a.score - b.score || b.criticalAlerts.length - a.criticalAlerts.length).slice(0, 6);
+  const prioritySites = [...latestChecksBySite]
+    .filter(site => site.alertCount > 0 || site.score < 90)
+    .sort((a, b) => a.score - b.score || b.criticalAlerts.length - a.criticalAlerts.length);
   const scoreColor = (score: number) => score >= 90 ? 'var(--petrol)' : score >= 70 ? 'var(--copper)' : '#c44';
 
   return (
@@ -190,7 +193,7 @@ export default function Dashboard() {
       >
         <div>
           <h1 className="text-5xl font-bold mb-2" style={{ color: 'var(--petrol)', fontFamily: 'var(--font-fraunces), Georgia, serif', letterSpacing: '-0.06em' }}>
-            Crawl Policy Intelligence
+            Dashboard
           </h1>
           <p className="text-lg" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
             Risk, AI accessibility and crawl policy evolution across your portfolio
