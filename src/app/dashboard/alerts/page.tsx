@@ -11,8 +11,12 @@ export default function AlertsPage() {
   const [alerts, setAlerts] = useState<any[]>([]);
   const [sites, setSites] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [severityFilter, setSeverityFilter] = useState('all');
+  const [siteFilter, setSiteFilter] = useState('all');
 
   useEffect(() => {
+    const severity = new URLSearchParams(window.location.search).get('severity');
+    if (severity) setSeverityFilter(severity);
     fetchData();
   }, []);
 
@@ -39,6 +43,11 @@ export default function AlertsPage() {
 
   if (loading) return <div className="p-8">Loading...</div>;
   const siteById = Object.fromEntries(sites.map(site => [site.id, site]));
+  const filteredAlerts = alerts.filter(alert => {
+    const severityMatches = severityFilter === 'all' || alert.severity === severityFilter;
+    const siteMatches = siteFilter === 'all' || alert.site_id === siteFilter;
+    return severityMatches && siteMatches;
+  });
 
   return (
     <div className="p-8 space-y-8">
@@ -54,8 +63,35 @@ export default function AlertsPage() {
         </p>
       </motion.div>
 
+      <div className="flex flex-wrap gap-3">
+        {['all', 'critical', 'high', 'medium', 'info'].map(severity => (
+          <button
+            key={severity}
+            onClick={() => setSeverityFilter(severity)}
+            className="px-4 py-2 rounded-lg text-sm font-semibold capitalize"
+            style={{
+              background: severityFilter === severity ? 'var(--petrol)' : 'rgba(255, 248, 234, 0.56)',
+              color: severityFilter === severity ? 'var(--cream)' : 'var(--ink)',
+              border: '1px solid var(--line)',
+              fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif'
+            }}
+          >
+            {severity}
+          </button>
+        ))}
+        <select
+          value={siteFilter}
+          onChange={(event) => setSiteFilter(event.target.value)}
+          className="px-4 py-2 rounded-lg text-sm font-semibold"
+          style={{ background: 'rgba(255, 248, 234, 0.56)', border: '1px solid var(--line)', color: 'var(--ink)' }}
+        >
+          <option value="all">All sites</option>
+          {sites.map(site => <option key={site.id} value={site.id}>{site.name}</option>)}
+        </select>
+      </div>
+
       <div className="space-y-4">
-        {alerts.map((alert: any, index: number) => {
+        {filteredAlerts.map((alert: any, index: number) => {
           const site = siteById[alert.site_id];
 
           return (

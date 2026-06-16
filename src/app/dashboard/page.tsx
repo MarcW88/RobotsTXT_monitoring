@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Activity, AlertTriangle, Bot, Link2, ShieldCheck, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from "@/lib/supabase";
+import Link from 'next/link';
 
 const AI_BOTS = ['GPTBot', 'ClaudeBot', 'PerplexityBot', 'CCBot'];
 
@@ -218,7 +219,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
           { title: 'Crawl Health Score', value: `${crawlHealthScore}/100`, description: 'Portfolio crawl policy quality', icon: ShieldCheck, color: scoreColor(crawlHealthScore) },
-          { title: 'Critical Risks', value: criticalRisks, description: 'Open critical crawl issues', icon: AlertTriangle, color: criticalRisks > 0 ? '#c44' : 'var(--petrol)' },
+          { title: 'Critical Risks', value: criticalRisks, description: 'Open critical crawl issues', icon: AlertTriangle, color: criticalRisks > 0 ? '#c44' : 'var(--petrol)', href: '/dashboard/alerts?severity=critical' },
           { title: 'AI Accessibility Score', value: `${aiAccessibilityScore}%`, description: AI_BOTS.join(', '), icon: Bot, color: scoreColor(aiAccessibilityScore) },
           { title: 'URLs Impacted', value: urlsImpacted, description: 'URLs changed by latest robots diffs', icon: Link2, color: urlsImpacted > 0 ? 'var(--copper)' : 'var(--petrol)' },
         ].map((kpi, index) => {
@@ -232,11 +233,12 @@ export default function Dashboard() {
               transition={{ delay: index * 0.08 }}
               whileHover={{ y: -4 }}
             >
+              <Link href={(kpi as any).href || '/dashboard/alerts'}>
               <Card style={{
                 background: 'radial-gradient(circle at 18% 12%, rgba(194, 145, 93, 0.08), transparent 28%), rgba(255, 248, 234, 0.56)',
                 border: '1px solid var(--line)',
                 boxShadow: '0 18px 46px var(--shadow)'
-              }}>
+              }} className="cursor-pointer">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-5">
                     <Icon className="w-8 h-8" style={{ color: kpi.color }} />
@@ -247,6 +249,7 @@ export default function Dashboard() {
                   <div className="text-xs mt-2" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>{kpi.description}</div>
                 </CardContent>
               </Card>
+              </Link>
             </motion.div>
           );
         })}

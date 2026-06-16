@@ -18,6 +18,7 @@ export default function SitesPage() {
   const [showAddSite, setShowAddSite] = useState(false);
   const [newSiteName, setNewSiteName] = useState('');
   const [newSiteUrl, setNewSiteUrl] = useState('');
+  const [riskFilter, setRiskFilter] = useState('all');
 
   useEffect(() => {
     fetchData();
@@ -176,11 +177,22 @@ export default function SitesPage() {
 
   if (loading) return <div className="p-8">Loading...</div>;
 
-  const sitesWithAlerts = sites.map(site => ({
-    ...site,
-    alerts: alerts.filter(a => a.site_id === site.id).length,
-    lastCheck: site.updated_at ? new Date(site.updated_at).toLocaleString() : 'Unknown'
-  }));
+  const sitesWithAlerts = sites.map(site => {
+    const siteAlerts = alerts.filter(a => a.site_id === site.id);
+    const criticalAlerts = siteAlerts.filter(a => a.severity === 'critical').length;
+    const highAlerts = siteAlerts.filter(a => a.severity === 'high').length;
+    const risk = criticalAlerts > 0 ? 'critical' : highAlerts > 0 ? 'high' : siteAlerts.length > 0 ? 'warning' : 'ok';
+
+    return {
+      ...site,
+      alerts: siteAlerts.length,
+      criticalAlerts,
+      highAlerts,
+      risk,
+      lastCheck: site.updated_at ? new Date(site.updated_at).toLocaleString() : 'Unknown'
+    };
+  });
+  const filteredSites = sitesWithAlerts.filter(site => riskFilter === 'all' || site.risk === riskFilter);
 
   return (
     <div className="flex">
@@ -354,8 +366,26 @@ export default function SitesPage() {
         </motion.div>
       )}
 
+      <div className="flex flex-wrap gap-3">
+        {['all', 'critical', 'high', 'warning', 'ok'].map(risk => (
+          <button
+            key={risk}
+            onClick={() => setRiskFilter(risk)}
+            className="px-4 py-2 rounded-lg text-sm font-semibold capitalize"
+            style={{
+              background: riskFilter === risk ? 'var(--petrol)' : 'rgba(255, 248, 234, 0.56)',
+              color: riskFilter === risk ? 'var(--cream)' : 'var(--ink)',
+              border: '1px solid var(--line)',
+              fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif'
+            }}
+          >
+            {risk}
+          </button>
+        ))}
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {sitesWithAlerts.map((site: any, index: number) => {
+        {filteredSites.map((site: any, index: number) => {
           const statusColors = {
             OK: 'var(--petrol)',
             Warning: 'var(--copper)',

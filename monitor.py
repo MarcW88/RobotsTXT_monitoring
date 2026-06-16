@@ -38,6 +38,7 @@ ALERTS_CSV_PATH = DATA_DIR / "alerts.csv"
 DEFAULT_TIMEOUT = 20
 URL_DROP_THRESHOLD = 0.3
 URL_INCREASE_THRESHOLD = 0.5
+SITEMAP_URL_SAMPLE_LIMIT = 25
 ROBOTS_USER_AGENTS = [
     "Googlebot",
     "Googlebot-Image",
@@ -231,6 +232,26 @@ def urls_from_sitemaps(sitemap_details):
     return sitemap_urls
 
 
+def sample_sitemap_urls(site, sitemap_details, limit=SITEMAP_URL_SAMPLE_LIMIT):
+    urls = sorted(urls_from_sitemaps(sitemap_details))
+    selected_urls = []
+    homepage = site["base_url"].rstrip("/")
+    for url in urls:
+        if url.rstrip("/") == homepage:
+            selected_urls.append(url)
+    for keyword in ["contact", "product", "category", "blog", "news", "shop"]:
+        for url in urls:
+            if keyword in url.lower() and url not in selected_urls:
+                selected_urls.append(url)
+                break
+    for url in urls:
+        if url not in selected_urls:
+            selected_urls.append(url)
+        if len(selected_urls) >= limit:
+            break
+    return selected_urls[:limit]
+
+
 def xml_local_name(tag):
     return tag.split("}", 1)[-1] if "}" in tag else tag
 
@@ -375,6 +396,17 @@ def previous_important_url_results(previous):
 def test_important_urls(site, robots_content, sitemap_details, important_urls):
     sitemap_url_set = urls_from_sitemaps(sitemap_details)
     matching_urls = [row for row in important_urls if site_matches_important_url(site, row)]
+    sitemap_sample_rows = [
+        {
+            "site": site["name"],
+            "url": url,
+            "type": "sitemap_sample",
+            "priority": "normal",
+        }
+        for url in sample_sitemap_urls(site, sitemap_details)
+    ]
+    configured_urls = {(row.get("url") or "").strip() for row in matching_urls}
+    matching_urls = matching_urls + [row for row in sitemap_sample_rows if row["url"] not in configured_urls]
     results = []
 
     for row in matching_urls:
@@ -489,8 +521,6 @@ def classify_alerts(site, status_code, content, sitemaps, sitemap_details, impor
                 alerts.append(make_alert("medium", "contradictory_directive", issue['description'], url=robots_url(site["base_url"]), current_status="contradictory"))
             elif issue['type'] == 'rule_order_conflict':
                 alerts.append(make_alert("medium", "rule_order_conflict", issue['description'], url=robots_url(site["base_url"]), current_status="ambiguous_order"))
-            elif issue['type'] == 'ai_specific_rules':
-                alerts.append(make_alert("info", "ai_specific_rules", issue['description'], url=robots_url(site["base_url"]), current_status="ai_rules"))
             elif issue['type'] == 'crawl_delay':
                 alerts.append(make_alert("info", "crawl_delay", issue['description'], url=robots_url(site["base_url"]), current_status="crawl_delay"))
     else:
@@ -763,7 +793,11 @@ def check_site(site):
         robots_accessible = status_code is not None and status_code < 400
         sitemap_declared = len(sitemaps) > 0
         sitemap_valid = any(detail.get('type') == 'urlset' for detail in sitemap_details)
-        ai_bots_consistent = not any(issue['type'] == 'ai_specific_rules' for issue in robots_issues)
+        ai_bots_consistent = not any(
+            result.get('agents', {}).get(agent) is False
+            for result in important_url_results
+            for agent in ["GPTBot", "ClaudeBot", "PerplexityBot", "CCBot"]
+        )
         no_contradictory_directives = not any(issue['type'] == 'contradictory_directive' for issue in robots_issues)
         
         # Check business URLs accessibility

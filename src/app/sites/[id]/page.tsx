@@ -73,6 +73,21 @@ export default function SiteDetail({ params }: { params: { id: string } }) {
   const siteStatus = siteAlerts > 0 ? (siteAlerts > 3 ? 'Critical' : 'Warning') : 'OK';
   const crawlPolicyStatus = siteAlerts > 0 ? 'Warning' : 'OK';
   const crawlPolicySummary = siteAlerts > 0 ? `${siteAlerts} alerts detected` : 'No issues detected';
+  const sitemapUrlCounts = sitemaps.map((sitemap: any) => sitemap.url_count || 0).slice(0, 10).reverse();
+  const maxSitemapUrlCount = Math.max(1, ...sitemapUrlCounts);
+  const importantUrlResults = Array.isArray(check?.important_url_results) ? check.important_url_results : [];
+  const agents = ['Googlebot', 'Bingbot', 'GPTBot', 'ClaudeBot', 'PerplexityBot', 'CCBot'];
+  const userAgentAccess = agents.map(agent => {
+    const checkedUrls = importantUrlResults.filter((item: any) => item?.agents && agent in item.agents);
+    const allowed = checkedUrls.filter((item: any) => item.agents[agent]).length;
+    const access = checkedUrls.length ? Math.round((allowed / checkedUrls.length) * 100) : null;
+    return {
+      agent,
+      access,
+      checked: checkedUrls.length,
+      color: access === null || access >= 90 ? 'var(--petrol)' : access >= 70 ? 'var(--copper)' : '#c44'
+    };
+  });
 
   return (
     <div className="flex">
@@ -172,18 +187,22 @@ export default function SiteDetail({ params }: { params: { id: string } }) {
                 </CardHeader>
                 <CardContent>
                   <div className="h-64 flex items-end gap-2">
-                    {[1200, 1250, 1300, 1280, 1320, 1350, 1400, 1380, 1420, 1450].map((count, index) => (
+                    {sitemapUrlCounts.length ? sitemapUrlCounts.map((count, index) => (
                       <motion.div
                         key={index}
                         initial={{ height: 0 }}
-                        animate={{ height: `${(count / 1500) * 100}%` }}
+                        animate={{ height: `${(count / maxSitemapUrlCount) * 100}%` }}
                         transition={{ delay: index * 0.1 }}
                         className="flex-1 flex flex-col items-center"
                       >
                         <div className="w-full rounded-t" style={{ background: 'linear-gradient(180deg, var(--petrol), var(--petrol-deep))' }} />
                         <div className="text-xs mt-2" style={{ color: 'var(--tweed)' }}>{index + 1}</div>
                       </motion.div>
-                    ))}
+                    )) : (
+                      <div className="w-full h-full flex items-center justify-center text-sm" style={{ color: 'var(--tweed)' }}>
+                        No sitemap URL counts available yet
+                      </div>
+                    )}
                   </div>
                   <div className="text-center text-sm mt-4" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>Last 10 checks</div>
                 </CardContent>
@@ -208,13 +227,7 @@ export default function SiteDetail({ params }: { params: { id: string } }) {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {[
-                      { agent: 'Googlebot', access: 95, color: 'var(--petrol)' },
-                      { agent: 'Bingbot', access: 88, color: 'var(--petrol)' },
-                      { agent: 'Slurp', access: 72, color: 'var(--copper)' },
-                      { agent: 'DuckDuckBot', access: 65, color: 'var(--copper)' },
-                      { agent: 'Baiduspider', access: 45, color: 'var(--tweed)' },
-                    ].map((item, index) => (
+                    {userAgentAccess.map((item, index) => (
                       <motion.div
                         key={item.agent}
                         initial={{ opacity: 0, x: 20 }}
@@ -226,14 +239,17 @@ export default function SiteDetail({ params }: { params: { id: string } }) {
                           <div className="flex-1 rounded-full h-2" style={{ background: 'var(--line)' }}>
                             <motion.div
                               initial={{ width: 0 }}
-                              animate={{ width: `${item.access}%` }}
+                              animate={{ width: `${item.access ?? 0}%` }}
                               transition={{ delay: 0.5 + index * 0.1 }}
                               className="h-2 rounded-full"
                               style={{ background: item.color }}
                             />
                           </div>
-                          <span className="text-sm w-12 text-right" style={{ color: 'var(--ink)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>{item.access}%</span>
+                          <span className="text-sm w-20 text-right" style={{ color: 'var(--ink)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
+                            {item.access === null ? 'n/a' : `${item.access}%`}
+                          </span>
                         </div>
+                        <div className="text-xs ml-28" style={{ color: 'var(--tweed)' }}>{item.checked} URLs checked</div>
                       </motion.div>
                     ))}
                   </div>
