@@ -628,6 +628,24 @@ def save_check(site, result):
         supabase_client.table('checks').insert(check_data).execute()
         print(f"Check saved to Supabase for site: {site['name']}")
         
+        # Insert alerts into separate alerts table
+        if result.get('alerts'):
+            print(f"Inserting {len(result['alerts'])} alerts into alerts table...")
+            for alert in result['alerts']:
+                alert_data = {
+                    'site_id': site_id,
+                    'check_id': None,  # Will be updated after getting the check ID
+                    'severity': alert.get('severity', 'info'),
+                    'alert_type': alert.get('alert_type', 'unknown'),
+                    'message': alert.get('message', ''),
+                    'url': alert.get('url', ''),
+                    'user_agent': alert.get('user_agent', ''),
+                    'previous_status': alert.get('previous_status', ''),
+                    'current_status': alert.get('current_status', '')
+                }
+                supabase_client.table('alerts').insert(alert_data).execute()
+            print("Alerts saved to Supabase")
+        
     except Exception as e:
         print(f"Error saving to Supabase: {e}")
         import traceback
