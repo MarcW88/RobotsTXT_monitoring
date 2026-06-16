@@ -105,7 +105,7 @@ def parse_robots_to_df(robots_content: str, robots_url: str) -> pd.DataFrame:
     return pd.DataFrame(records)
 
 
-def extract_sitemaps_from_robots(robots_df: pd.DataFrame) -> List[str]:
+def extract_sitemaps_from_robots(robots_df: pd.DataFrame, robots_url: str = "") -> List[str]:
     """
     Extract sitemap URLs from parsed robots.txt DataFrame.
     
@@ -113,7 +113,9 @@ def extract_sitemaps_from_robots(robots_df: pd.DataFrame) -> List[str]:
     """
     sitemap_rows = robots_df[robots_df['directive'] == 'sitemap']
     sitemaps = sitemap_rows['content'].dropna().unique().tolist()
-    return sorted([s for s in sitemaps if s])
+    if robots_url:
+        sitemaps = [urljoin(robots_url, sitemap.strip()) for sitemap in sitemaps if sitemap and sitemap.strip()]
+    return sorted([s.strip() for s in sitemaps if s and s.strip()])
 
 
 def detect_robots_issues(robots_df: pd.DataFrame) -> List[Dict]:
@@ -161,6 +163,25 @@ def detect_robots_issues(robots_df: pd.DataFrame) -> List[Dict]:
                     'description': f'Contradictory directives for path "{path}" under user-agent {user_agent}',
                     'affected_agents': [user_agent],
                     'path': path
+                })
+
+        directive_df = agent_df[agent_df['directive'].isin(['allow', 'disallow'])].dropna(subset=['content'])
+        for path in directive_df['content'].unique():
+            path_rules = directive_df[directive_df['content'] == path]
+            directives = set(path_rules['directive'].tolist())
+            if {'allow', 'disallow'}.issubset(directives):
+                ordered_rules = path_rules.sort_values('line_number')
+                rule_order = [
+                    f"{row['directive']} line {row['line_number']}"
+                    for _, row in ordered_rules.iterrows()
+                ]
+                issues.append({
+                    'type': 'rule_order_conflict',
+                    'severity': 'medium',
+                    'description': f'Allow/Disallow conflict for "{path}" under user-agent {user_agent}. Rule order: {", ".join(rule_order)}',
+                    'affected_agents': [user_agent],
+                    'path': path,
+                    'rule_order': rule_order
                 })
     
     # Check for AI-specific rules

@@ -206,10 +206,10 @@ def fetch_bytes(url):
     return response.status_code, response.url, response.content
 
 
-def extract_sitemaps(robots_content):
+def extract_sitemaps(robots_content, robots_txt_url):
     """Extract sitemaps using advertools adapter for better parsing."""
-    robots_df = parse_robots_to_df(robots_content, "")
-    return extract_sitemaps_from_robots(robots_df)
+    robots_df = parse_robots_to_df(robots_content, robots_txt_url)
+    return extract_sitemaps_from_robots(robots_df, robots_txt_url)
 
 
 def site_matches_important_url(site, row):
@@ -487,6 +487,8 @@ def classify_alerts(site, status_code, content, sitemaps, sitemap_details, impor
                 alerts.append(make_alert("critical", "disallow_all", issue['description'], url=robots_url(site["base_url"]), current_status="blocked"))
             elif issue['type'] == 'contradictory_directive':
                 alerts.append(make_alert("medium", "contradictory_directive", issue['description'], url=robots_url(site["base_url"]), current_status="contradictory"))
+            elif issue['type'] == 'rule_order_conflict':
+                alerts.append(make_alert("medium", "rule_order_conflict", issue['description'], url=robots_url(site["base_url"]), current_status="ambiguous_order"))
             elif issue['type'] == 'ai_specific_rules':
                 alerts.append(make_alert("info", "ai_specific_rules", issue['description'], url=robots_url(site["base_url"]), current_status="ai_rules"))
             elif issue['type'] == 'crawl_delay':
@@ -731,7 +733,7 @@ def check_site(site):
         alerts = [make_alert("critical", "robots_network_error", f"Erreur réseau: {error}", url=url, current_status="network_error")]
     else:
         # Use advertools adapter for sitemap extraction
-        sitemaps = extract_sitemaps(content)
+        sitemaps = extract_sitemaps(content, final_url or url)
         sitemap_details = crawl_sitemaps(sitemaps)
         important_url_results = test_important_urls(site, content, sitemap_details, important_urls)
         alerts = classify_alerts(site, status_code, content, sitemaps, sitemap_details, important_url_results, previous)
