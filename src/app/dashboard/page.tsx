@@ -151,42 +151,49 @@ export default function Dashboard() {
       </motion.div>
 
       {/* Robots Intelligence Score */}
-      {checks.length > 0 && checks[0].robots_intelligence_score && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
-        >
-          <Card style={{
-            background: 'radial-gradient(circle at 18% 12%, rgba(194, 145, 93, 0.08), transparent 28%), rgba(255, 248, 234, 0.56)',
-            border: '1px solid var(--line)'
-          }}>
-            <CardHeader>
-              <CardTitle style={{ fontFamily: 'var(--font-fraunces), Georgia, serif', color: 'var(--petrol)' }}>
-                Robots Intelligence Score
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div className="text-center">
-                  <div className="text-6xl font-bold mb-2" style={{ 
-                    color: checks[0].robots_intelligence_score.overall_score >= 80 ? 'var(--petrol)' : 
-                           checks[0].robots_intelligence_score.overall_score >= 60 ? 'var(--copper)' : '#c44',
-                    fontFamily: 'var(--font-fraunces), Georgia, serif'
-                  }}>
-                    {checks[0].robots_intelligence_score.overall_score}/100
+      {(() => {
+        const checkWithScore = checks.find(c => c.robots_intelligence_score);
+        if (!checkWithScore) return null;
+        const score = checkWithScore.robots_intelligence_score.overall_score || 0;
+        const grade = checkWithScore.robots_intelligence_score.grade || 'N/A';
+        const componentScores = checkWithScore.robots_intelligence_score.component_scores || {};
+        
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+          >
+            <Card style={{
+              background: 'radial-gradient(circle at 18% 12%, rgba(194, 145, 93, 0.08), transparent 28%), rgba(255, 248, 234, 0.56)',
+              border: '1px solid var(--line)'
+            }}>
+              <CardHeader>
+                <CardTitle style={{ fontFamily: 'var(--font-fraunces), Georgia, serif', color: 'var(--petrol)' }}>
+                  Robots Intelligence Score
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div className="text-center">
+                    <div className="text-6xl font-bold mb-2" style={{ 
+                      color: score >= 80 ? 'var(--petrol)' : 
+                             score >= 60 ? 'var(--copper)' : '#c44',
+                      fontFamily: 'var(--font-fraunces), Georgia, serif'
+                    }}>
+                      {score}/100
+                    </div>
+                    <div className="text-sm" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                      Grade: {grade}
+                    </div>
                   </div>
-                  <div className="text-sm" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
-                    Grade: {checks[0].robots_intelligence_score.grade}
-                  </div>
-                </div>
-                <div className="flex-1 ml-8 space-y-2">
-                  {Object.entries(checks[0].robots_intelligence_score.component_scores).map(([key, value]) => (
-                    <div key={key} className="flex items-center justify-between">
-                      <span className="text-sm" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
-                        {key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                      </span>
-                      <div className="flex items-center gap-2">
+                  <div className="flex-1 ml-8 space-y-2">
+                    {Object.entries(componentScores).map(([key, value]) => (
+                      <div key={key} className="flex items-center justify-between">
+                        <span className="text-sm" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                          {key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        </span>
+                        <div className="flex items-center gap-2">
                         <div className="w-32 h-2 rounded-full" style={{ background: 'var(--paper-deep)' }}>
                           <div 
                             className="h-full rounded-full" 
@@ -207,59 +214,65 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </motion.div>
-      )}
+        );
+      })()}
 
       {/* AI Accessibility Matrix */}
-      {checks.length > 0 && checks[0].ai_accessibility && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <Card style={{
-            background: 'rgba(255, 248, 234, 0.56)',
-            border: '1px solid var(--line)'
-          }}>
-            <CardHeader>
-              <CardTitle style={{ fontFamily: 'var(--font-fraunces), Georgia, serif', color: 'var(--petrol)' }}>
-                AI Accessibility Score
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between mb-4">
-                <div className="text-center">
-                  <div className="text-4xl font-bold mb-1" style={{ 
-                    color: checks[0].ai_accessibility.ai_accessibility_score >= 80 ? 'var(--petrol)' : 
-                           checks[0].ai_accessibility.ai_accessibility_score >= 50 ? 'var(--copper)' : '#c44',
-                    fontFamily: 'var(--font-fraunces), Georgia, serif'
-                  }}>
-                    {checks[0].ai_accessibility.ai_accessibility_score}%
+      {(() => {
+        const checkWithAI = checks.find(c => c.ai_accessibility);
+        if (!checkWithAI) return null;
+        const aiData = checkWithAI.ai_accessibility;
+        
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <Card style={{
+              background: 'rgba(255, 248, 234, 0.56)',
+              border: '1px solid var(--line)'
+            }}>
+              <CardHeader>
+                <CardTitle style={{ fontFamily: 'var(--font-fraunces), Georgia, serif', color: 'var(--petrol)' }}>
+                  AI Accessibility Score
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="text-center">
+                    <div className="text-4xl font-bold mb-1" style={{ 
+                      color: aiData.ai_accessibility_score >= 80 ? 'var(--petrol)' : 
+                             aiData.ai_accessibility_score >= 50 ? 'var(--copper)' : '#c44',
+                      fontFamily: 'var(--font-fraunces), Georgia, serif'
+                    }}>
+                      {aiData.ai_accessibility_score}%
+                    </div>
+                    <div className="text-sm" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                      Risk: {aiData.risk_level}
+                    </div>
                   </div>
-                  <div className="text-sm" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
-                    Risk: {checks[0].ai_accessibility.risk_level}
+                  <div className="flex gap-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold" style={{ color: 'var(--petrol)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
+                        {aiData.accessible_bots?.length || 0}
+                      </div>
+                      <div className="text-xs" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                        Accessible
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold" style={{ color: '#c44', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
+                        {aiData.blocked_bots?.length || 0}
+                      </div>
+                      <div className="text-xs" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                        Blocked
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="flex gap-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold" style={{ color: 'var(--petrol)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
-                      {checks[0].ai_accessibility.accessible_bots.length}
-                    </div>
-                    <div className="text-xs" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
-                      Accessible
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold" style={{ color: '#c44', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
-                      {checks[0].ai_accessibility.blocked_bots.length}
-                    </div>
-                    <div className="text-xs" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
-                      Blocked
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="grid grid-cols-5 gap-2">
-                {Object.entries(checks[0].ai_accessibility.ai_accessibility_matrix).map(([bot, data]: [string, any]) => (
+                <div className="grid grid-cols-5 gap-2">
+                  {Object.entries(aiData.ai_accessibility_matrix || {}).map(([bot, data]: [string, any]) => (
                   <div key={bot} className="p-2 rounded text-center" style={{
                     background: data.accessibility_percentage >= 80 ? 'rgba(52, 131, 78, 0.1)' : 
                            data.accessibility_percentage >= 50 ? 'rgba(194, 145, 93, 0.1)' : 'rgba(196, 68, 68, 0.1)',
@@ -281,243 +294,262 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </motion.div>
-      )}
+        );
+      })()}
 
       {/* Risk Impact Classification */}
-      {checks.length > 0 && checks[0].risk_classification && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-        >
-          <Card style={{
-            background: 'rgba(255, 248, 234, 0.56)',
-            border: '1px solid var(--line)'
-          }}>
-            <CardHeader>
-              <CardTitle style={{ fontFamily: 'var(--font-fraunces), Georgia, serif', color: 'var(--petrol)' }}>
-                Risk Impact Classification
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="text-center p-4 rounded" style={{ background: 'rgba(52, 131, 78, 0.1)' }}>
-                  <div className="text-3xl font-bold mb-1" style={{ color: 'var(--petrol)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
-                    {checks[0].risk_classification.counts.seo}
+      {(() => {
+        const checkWithRisk = checks.find(c => c.risk_classification);
+        if (!checkWithRisk) return null;
+        const riskData = checkWithRisk.risk_classification;
+        
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+          >
+            <Card style={{
+              background: 'rgba(255, 248, 234, 0.56)',
+              border: '1px solid var(--line)'
+            }}>
+              <CardHeader>
+                <CardTitle style={{ fontFamily: 'var(--font-fraunces), Georgia, serif', color: 'var(--petrol)' }}>
+                  Risk Impact Classification
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center p-4 rounded" style={{ background: 'rgba(52, 131, 78, 0.1)' }}>
+                    <div className="text-3xl font-bold mb-1" style={{ color: 'var(--petrol)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
+                      {riskData.counts?.seo || 0}
+                    </div>
+                    <div className="text-sm" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                      SEO Alerts
+                    </div>
                   </div>
-                  <div className="text-sm" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
-                    SEO Alerts
+                  <div className="text-center p-4 rounded" style={{ background: 'rgba(194, 145, 93, 0.1)' }}>
+                    <div className="text-3xl font-bold mb-1" style={{ color: 'var(--copper)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
+                      {riskData.counts?.geo || 0}
+                    </div>
+                    <div className="text-sm" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                      GEO Alerts
+                    </div>
+                  </div>
+                  <div className="text-center p-4 rounded" style={{ background: 'rgba(196, 68, 68, 0.1)' }}>
+                    <div className="text-3xl font-bold mb-1" style={{ color: '#c44', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
+                      {riskData.counts?.both || 0}
+                    </div>
+                    <div className="text-sm" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                      Both Impact
+                    </div>
                   </div>
                 </div>
-                <div className="text-center p-4 rounded" style={{ background: 'rgba(194, 145, 93, 0.1)' }}>
-                  <div className="text-3xl font-bold mb-1" style={{ color: 'var(--copper)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
-                    {checks[0].risk_classification.counts.geo}
-                  </div>
-                  <div className="text-sm" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
-                    GEO Alerts
-                  </div>
+                <div className="mt-4 text-center">
+                  <span className="text-sm" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                    Primary Impact: <strong>{riskData.primary_impact?.toUpperCase() || 'N/A'}</strong>
+                  </span>
                 </div>
-                <div className="text-center p-4 rounded" style={{ background: 'rgba(196, 68, 68, 0.1)' }}>
-                  <div className="text-3xl font-bold mb-1" style={{ color: '#c44', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
-                    {checks[0].risk_classification.counts.both}
-                  </div>
-                  <div className="text-sm" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
-                    Both Impact
-                  </div>
-                </div>
-              </div>
-              <div className="mt-4 text-center">
-                <span className="text-sm" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
-                  Primary Impact: <strong>{checks[0].risk_classification.primary_impact.toUpperCase()}</strong>
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        );
+      })()}
 
       {/* Portfolio Benchmark */}
-      {checks.length > 0 && checks[0].portfolio_benchmark && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <Card style={{
-            background: 'rgba(255, 248, 234, 0.56)',
-            border: '1px solid var(--line)'
-          }}>
-            <CardHeader>
-              <CardTitle style={{ fontFamily: 'var(--font-fraunces), Georgia, serif', color: 'var(--petrol)' }}>
-                Portfolio Benchmark
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div className="text-center p-3 rounded" style={{ background: 'rgba(52, 131, 78, 0.1)' }}>
-                  <div className="text-2xl font-bold mb-1" style={{ color: 'var(--petrol)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
-                    {checks[0].portfolio_benchmark.total_sites}
+      {(() => {
+        const checkWithBenchmark = checks.find(c => c.portfolio_benchmark);
+        if (!checkWithBenchmark) return null;
+        const benchmarkData = checkWithBenchmark.portfolio_benchmark;
+        
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <Card style={{
+              background: 'rgba(255, 248, 234, 0.56)',
+              border: '1px solid var(--line)'
+            }}>
+              <CardHeader>
+                <CardTitle style={{ fontFamily: 'var(--font-fraunces), Georgia, serif', color: 'var(--petrol)' }}>
+                  Portfolio Benchmark
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                  <div className="text-center p-3 rounded" style={{ background: 'rgba(52, 131, 78, 0.1)' }}>
+                    <div className="text-2xl font-bold mb-1" style={{ color: 'var(--petrol)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
+                      {benchmarkData.total_sites || 0}
+                    </div>
+                    <div className="text-xs" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                      Total Sites
+                    </div>
                   </div>
-                  <div className="text-xs" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
-                    Total Sites
+                  <div className="text-center p-3 rounded" style={{ background: 'rgba(194, 145, 93, 0.1)' }}>
+                    <div className="text-2xl font-bold mb-1" style={{ color: 'var(--copper)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
+                      {benchmarkData.average_robots_score || 0}
+                    </div>
+                    <div className="text-xs" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                      Avg Robots Score
+                    </div>
+                  </div>
+                  <div className="text-center p-3 rounded" style={{ background: 'rgba(52, 131, 78, 0.1)' }}>
+                    <div className="text-2xl font-bold mb-1" style={{ color: 'var(--petrol)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
+                      {benchmarkData.average_ai_accessibility_score || 0}%
+                    </div>
+                    <div className="text-xs" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                      Avg AI Access
+                    </div>
+                  </div>
+                  <div className="text-center p-3 rounded" style={{ background: 'rgba(196, 68, 68, 0.1)' }}>
+                    <div className="text-2xl font-bold mb-1" style={{ color: '#c44', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
+                      {benchmarkData.score_distribution?.F || 0}
+                    </div>
+                    <div className="text-xs" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                      Grade F
+                    </div>
                   </div>
                 </div>
-                <div className="text-center p-3 rounded" style={{ background: 'rgba(194, 145, 93, 0.1)' }}>
-                  <div className="text-2xl font-bold mb-1" style={{ color: 'var(--copper)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
-                    {checks[0].portfolio_benchmark.average_robots_score}
-                  </div>
-                  <div className="text-xs" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
-                    Avg Robots Score
-                  </div>
-                </div>
-                <div className="text-center p-3 rounded" style={{ background: 'rgba(52, 131, 78, 0.1)' }}>
-                  <div className="text-2xl font-bold mb-1" style={{ color: 'var(--petrol)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
-                    {checks[0].portfolio_benchmark.average_ai_accessibility_score}%
-                  </div>
-                  <div className="text-xs" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
-                    Avg AI Access
-                  </div>
-                </div>
-                <div className="text-center p-3 rounded" style={{ background: 'rgba(196, 68, 68, 0.1)' }}>
-                  <div className="text-2xl font-bold mb-1" style={{ color: '#c44', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
-                    {checks[0].portfolio_benchmark.score_distribution.F}
-                  </div>
-                  <div className="text-xs" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
-                    Grade F
-                  </div>
-                </div>
-              </div>
-              
-              {checks[0].portfolio_benchmark.site_comparison.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="text-sm font-semibold mb-3" style={{ fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif', color: 'var(--petrol)' }}>
-                    Site Comparison
-                  </h4>
-                  {checks[0].portfolio_benchmark.site_comparison.map((site: any, index: number) => (
-                    <div key={index} className="flex items-center justify-between p-3 rounded" style={{ 
-                      background: index === 0 ? 'rgba(52, 131, 78, 0.1)' : 
-                             index === checks[0].portfolio_benchmark.site_comparison.length - 1 ? 'rgba(196, 68, 68, 0.1)' : 
-                             'rgba(255, 248, 234, 0.3)',
-                      border: '1px solid var(--line)'
-                    }}>
-                      <div className="flex-1">
-                        <div className="font-medium" style={{ fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif', color: 'var(--ink)' }}>
-                          {site.name}
+                
+                {benchmarkData.site_comparison && benchmarkData.site_comparison.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-semibold mb-3" style={{ fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif', color: 'var(--petrol)' }}>
+                      Site Comparison
+                    </h4>
+                    {benchmarkData.site_comparison.map((site: any, index: number) => (
+                      <div key={index} className="flex items-center justify-between p-3 rounded" style={{ 
+                        background: index === 0 ? 'rgba(52, 131, 78, 0.1)' : 
+                               index === benchmarkData.site_comparison.length - 1 ? 'rgba(196, 68, 68, 0.1)' : 
+                               'rgba(255, 248, 234, 0.3)',
+                        border: '1px solid var(--line)'
+                      }}>
+                        <div className="flex-1">
+                          <div className="font-medium" style={{ fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif', color: 'var(--ink)' }}>
+                            {site.name}
+                          </div>
+                          <div className="text-xs" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                            {site.sitemaps} sitemaps • {site.ai_bots_blocked} AI blocked
+                          </div>
                         </div>
-                        <div className="text-xs" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
-                          {site.sitemaps} sitemaps • {site.ai_bots_blocked} AI blocked
+                        <div className="text-right ml-4">
+                          <div className="text-lg font-bold" style={{ 
+                            color: site.robots_score >= 80 ? 'var(--petrol)' : 
+                                   site.robots_score >= 60 ? 'var(--copper)' : '#c44',
+                            fontFamily: 'var(--font-fraunces), Georgia, serif'
+                          }}>
+                            {site.robots_score}
+                          </div>
+                          <div className="text-xs" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                            AI: {site.ai_accessibility_score}%
+                          </div>
                         </div>
                       </div>
-                      <div className="text-right ml-4">
-                        <div className="text-lg font-bold" style={{ 
-                          color: site.robots_score >= 80 ? 'var(--petrol)' : 
-                                 site.robots_score >= 60 ? 'var(--copper)' : '#c44',
-                          fontFamily: 'var(--font-fraunces), Georgia, serif'
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        );
+      })()}
+
+      {/* Robots Diff Intelligence */}
+      {(() => {
+        const checkWithDiff = checks.find(c => c.robots_diff && c.robots_diff.change_count > 0);
+        if (!checkWithDiff) return null;
+        const diffData = checkWithDiff.robots_diff;
+        
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+          >
+            <Card style={{
+              background: 'rgba(255, 248, 234, 0.56)',
+              border: '1px solid var(--line)'
+            }}>
+              <CardHeader>
+                <CardTitle style={{ fontFamily: 'var(--font-fraunces), Georgia, serif', color: 'var(--petrol)' }}>
+                  Robots.txt Changes
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="text-sm" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                    Overall Impact: <strong style={{ 
+                      color: diffData.overall_impact === 'High' ? '#c44' : 
+                             diffData.overall_impact === 'Medium' ? 'var(--copper)' : 'var(--petrol)'
+                    }}>{diffData.overall_impact}</strong>
+                  </div>
+                  <div className="text-sm" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                    {diffData.change_count} changes detected
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-3 gap-4 mb-4">
+                  <div className="text-center p-2 rounded" style={{ background: 'rgba(52, 131, 78, 0.1)' }}>
+                    <div className="text-xl font-bold" style={{ color: 'var(--petrol)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
+                      {diffData.impact_summary?.seo || 0}
+                    </div>
+                    <div className="text-xs" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                      SEO Impact
+                    </div>
+                  </div>
+                  <div className="text-center p-2 rounded" style={{ background: 'rgba(194, 145, 93, 0.1)' }}>
+                    <div className="text-xl font-bold" style={{ color: 'var(--copper)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
+                      {diffData.impact_summary?.geo || 0}
+                    </div>
+                    <div className="text-xs" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                      GEO Impact
+                    </div>
+                  </div>
+                  <div className="text-center p-2 rounded" style={{ background: 'rgba(196, 68, 68, 0.1)' }}>
+                    <div className="text-xl font-bold" style={{ color: '#c44', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
+                      {diffData.impact_summary?.both || 0}
+                    </div>
+                    <div className="text-xs" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                      Both Impact
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {diffData.changes && diffData.changes.slice(0, 10).map((change: any, index: number) => (
+                    <div key={index} className="flex items-center justify-between p-2 rounded text-sm" style={{
+                      background: change.type === 'added' ? 'rgba(52, 131, 78, 0.1)' : 'rgba(196, 68, 68, 0.1)',
+                      border: '1px solid var(--line)'
+                    }}>
+                      <div className="flex-1 truncate" style={{ fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif', color: 'var(--ink)' }}>
+                        {change.line}
+                      </div>
+                      <div className="ml-2 flex items-center gap-2">
+                        <span className="px-2 py-1 rounded text-xs" style={{
+                          background: change.type === 'added' ? 'var(--petrol)' : '#c44',
+                          color: 'var(--cream)',
+                          fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif'
                         }}>
-                          {site.robots_score}
-                        </div>
-                        <div className="text-xs" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
-                          AI: {site.ai_accessibility_score}%
-                        </div>
+                          {change.type}
+                        </span>
+                        <span className="px-2 py-1 rounded text-xs" style={{
+                          background: change.impacts && change.impacts.includes('both') ? '#c44' : 
+                                 change.impacts && change.impacts.includes('geo') ? 'var(--copper)' : 'var(--petrol)',
+                          color: 'var(--cream)',
+                          fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif'
+                        }}>
+                          {change.impacts && change.impacts[0] ? change.impacts[0].toUpperCase() : 'N/A'}
+                        </span>
                       </div>
                     </div>
                   ))}
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </motion.div>
-      )}
-
-      {/* Robots Diff Intelligence */}
-      {checks.length > 0 && checks[0].robots_diff && checks[0].robots_diff.change_count > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-        >
-          <Card style={{
-            background: 'rgba(255, 248, 234, 0.56)',
-            border: '1px solid var(--line)'
-          }}>
-            <CardHeader>
-              <CardTitle style={{ fontFamily: 'var(--font-fraunces), Georgia, serif', color: 'var(--petrol)' }}>
-                Robots.txt Changes
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between mb-4">
-                <div className="text-sm" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
-                  Overall Impact: <strong style={{ 
-                    color: checks[0].robots_diff.overall_impact === 'High' ? '#c44' : 
-                           checks[0].robots_diff.overall_impact === 'Medium' ? 'var(--copper)' : 'var(--petrol)'
-                  }}>{checks[0].robots_diff.overall_impact}</strong>
-                </div>
-                <div className="text-sm" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
-                  {checks[0].robots_diff.change_count} changes detected
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-3 gap-4 mb-4">
-                <div className="text-center p-2 rounded" style={{ background: 'rgba(52, 131, 78, 0.1)' }}>
-                  <div className="text-xl font-bold" style={{ color: 'var(--petrol)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
-                    {checks[0].robots_diff.impact_summary.seo}
-                  </div>
-                  <div className="text-xs" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
-                    SEO Impact
-                  </div>
-                </div>
-                <div className="text-center p-2 rounded" style={{ background: 'rgba(194, 145, 93, 0.1)' }}>
-                  <div className="text-xl font-bold" style={{ color: 'var(--copper)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
-                    {checks[0].robots_diff.impact_summary.geo}
-                  </div>
-                  <div className="text-xs" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
-                    GEO Impact
-                  </div>
-                </div>
-                <div className="text-center p-2 rounded" style={{ background: 'rgba(196, 68, 68, 0.1)' }}>
-                  <div className="text-xl font-bold" style={{ color: '#c44', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
-                    {checks[0].robots_diff.impact_summary.both}
-                  </div>
-                  <div className="text-xs" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
-                    Both Impact
-                  </div>
-                </div>
-              </div>
-              
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {checks[0].robots_diff.changes.slice(0, 10).map((change: any, index: number) => (
-                  <div key={index} className="flex items-center justify-between p-2 rounded text-sm" style={{
-                    background: change.type === 'added' ? 'rgba(52, 131, 78, 0.1)' : 'rgba(196, 68, 68, 0.1)',
-                    border: '1px solid var(--line)'
-                  }}>
-                    <div className="flex-1 truncate" style={{ fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif', color: 'var(--ink)' }}>
-                      {change.line}
-                    </div>
-                    <div className="ml-2 flex items-center gap-2">
-                      <span className="px-2 py-1 rounded text-xs" style={{
-                        background: change.type === 'added' ? 'var(--petrol)' : '#c44',
-                        color: 'var(--cream)',
-                        fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif'
-                      }}>
-                        {change.type}
-                      </span>
-                      <span className="px-2 py-1 rounded text-xs" style={{
-                        background: change.impacts.includes('both') ? '#c44' : 
-                               change.impacts.includes('geo') ? 'var(--copper)' : 'var(--petrol)',
-                        color: 'var(--cream)',
-                        fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif'
-                      }}>
-                        {change.impacts[0].toUpperCase()}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        );
+      })()}
 
       {/* Hero Status Panel */}
       <motion.div
@@ -569,15 +601,17 @@ export default function Dashboard() {
                 border: '1px solid var(--line)',
                 boxShadow: '0 18px 46px var(--shadow)'
               }}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="p-3 rounded-lg" style={{ background: kpi.color }}>
-                      <Icon className="w-6 h-6" style={{ color: 'var(--cream)' }} />
-                    </div>
-                    <span className="text-sm" style={{ color: 'var(--copper)', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase' }}>{kpi.trend}</span>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <Icon className="w-8 h-8" style={{ color: kpi.color }} />
+                    <span className="text-sm font-medium px-2 py-1 rounded" style={{ 
+                      background: kpi.trend.startsWith('+') ? 'rgba(52, 131, 78, 0.1)' : 'rgba(196, 68, 68, 0.1)',
+                      color: kpi.trend.startsWith('+') ? 'var(--petrol)' : '#c44',
+                      fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif'
+                    }}>
+                      {kpi.trend}
+                    </span>
                   </div>
-                </CardHeader>
-                <CardContent>
                   <div className="text-3xl font-bold mb-1" style={{ color: 'var(--ink)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>{kpi.value}</div>
                   <div className="text-sm" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>{kpi.title}</div>
                 </CardContent>
@@ -587,190 +621,52 @@ export default function Dashboard() {
         })}
       </div>
 
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Alert Severity Donut */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.6 }}
-        >
-          <Card style={{
-            background: 'radial-gradient(circle at 18% 12%, rgba(194, 145, 93, 0.08), transparent 28%), rgba(255, 248, 234, 0.56)',
-            border: '1px solid var(--line)',
-            boxShadow: '0 18px 46px var(--shadow)'
-          }}>
-            <CardHeader>
-              <CardTitle style={{ color: 'var(--petrol)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>Alert Severity Distribution</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-center gap-8">
-                <div className="relative w-48 h-48">
-                  <svg viewBox="0 0 100 100" className="transform -rotate-90">
-                    <circle cx="50" cy="50" r="40" fill="none" stroke="var(--line)" strokeWidth="10" />
-                    <circle 
-                      cx="50" cy="50" r="40" 
-                      fill="none" 
-                      stroke="var(--copper)" 
-                      strokeWidth="10"
-                      strokeDasharray={`${(alertCounts.critical / (alertCounts.critical + alertCounts.high + alertCounts.medium + alertCounts.low || 1)) * 251.2} 251.2`}
-                      className="transition-all duration-1000"
-                    />
-                    <circle 
-                      cx="50" cy="50" r="40" 
-                      fill="none" 
-                      stroke="var(--tweed)" 
-                      strokeWidth="10"
-                      strokeDasharray={`${(alertCounts.high / (alertCounts.critical + alertCounts.high + alertCounts.medium + alertCounts.low || 1)) * 251.2} 251.2`}
-                      strokeDashoffset={-((alertCounts.critical / (alertCounts.critical + alertCounts.high + alertCounts.medium + alertCounts.low || 1)) * 251.2)}
-                      className="transition-all duration-1000"
-                    />
-                    <circle 
-                      cx="50" cy="50" r="40" 
-                      fill="none" 
-                      stroke="var(--petrol)" 
-                      strokeWidth="10"
-                      strokeDasharray={`${(alertCounts.medium / (alertCounts.critical + alertCounts.high + alertCounts.medium + alertCounts.low || 1)) * 251.2} 251.2`}
-                      strokeDashoffset={-((alertCounts.critical + alertCounts.high) / (alertCounts.critical + alertCounts.high + alertCounts.medium + alertCounts.low || 1) * 251.2)}
-                      className="transition-all duration-1000"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold" style={{ color: 'var(--ink)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>{alertCounts.critical + alertCounts.high + alertCounts.medium}</div>
-                      <div className="text-xs" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>Total Alerts</div>
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  {[
-                    { label: 'Critical', value: alertCounts.critical, color: 'var(--copper)' },
-                    { label: 'High', value: alertCounts.high, color: 'var(--tweed)' },
-                    { label: 'Medium', value: alertCounts.medium, color: 'var(--petrol)' },
-                    { label: 'Low', value: alertCounts.low, color: 'var(--tweed-deep)' },
-                  ].map((item) => (
-                    <div key={item.label} className="flex items-center gap-3">
-                      <div className="w-3 h-3 rounded-full" style={{ background: item.color }} />
-                      <span className="text-sm" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>{item.label}</span>
-                      <span className="font-semibold ml-auto" style={{ color: 'var(--ink)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>{item.value}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Alert Timeline */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.7 }}
-        >
-          <Card style={{
-            background: 'radial-gradient(circle at 18% 12%, rgba(194, 145, 93, 0.08), transparent 28%), rgba(255, 248, 234, 0.56)',
-            border: '1px solid var(--line)',
-            boxShadow: '0 18px 46px var(--shadow)'
-          }}>
-            <CardHeader>
-              <CardTitle style={{ color: 'var(--petrol)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>Alert Timeline</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {[
-                  { time: '2h ago', severity: 'critical', message: 'robots.txt blocks Googlebot' },
-                  { time: '4h ago', severity: 'high', message: 'Sitemap unreachable' },
-                  { time: '6h ago', severity: 'medium', message: 'Crawl delay increased' },
-                  { time: '8h ago', severity: 'low', message: 'Sitemap size changed' },
-                ].map((alert, index) => {
-                  const severityColors = {
-                    critical: 'var(--copper)',
-                    high: 'var(--tweed)',
-                    medium: 'var(--petrol)',
-                    low: 'var(--tweed-deep)',
-                  };
-
-                  return (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.8 + index * 0.1 }}
-                      className="flex items-start gap-4 p-3 rounded-lg hover:bg-opacity-80 transition-colors"
-                      style={{ background: 'rgba(255, 248, 234, 0.3)' }}
-                    >
-                      <div className="w-2 h-2 rounded-full mt-2" style={{ background: severityColors[alert.severity as keyof typeof severityColors] }} />
-                      <div className="flex-1">
-                        <div className="text-sm font-medium" style={{ color: 'var(--ink)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>{alert.message}</div>
-                        <div className="text-xs mt-1" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>{alert.time}</div>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
-
       {/* Site Health Cards */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.8 }}
-      >
-        <h2 className="text-3xl font-bold mb-4" style={{ color: 'var(--petrol)', fontFamily: 'var(--font-fraunces), Georgia, serif', letterSpacing: '-0.06em' }}>Site Health</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {sitesWithAlerts.map((site: any, index: number) => {
-            const statusColors = {
-              OK: 'var(--petrol)',
-              Warning: 'var(--copper)',
-              Critical: '#c44',
-            };
-            const siteStatus = site.alerts > 0 ? (site.alerts > 3 ? 'Critical' : 'Warning') : 'OK';
-
-            return (
-              <motion.div
-                key={site.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.9 + index * 0.1 }}
-                whileHover={{ scale: 1.02 }}
-              >
-                <Card style={{
-                  background: 'radial-gradient(circle at 18% 12%, rgba(194, 145, 93, 0.08), transparent 28%), rgba(255, 248, 234, 0.56)',
-                  border: '1px solid var(--line)',
-                  boxShadow: '0 18px 46px var(--shadow)'
-                }} className="hover:shadow-lg transition-all cursor-pointer">
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <CardTitle style={{ color: 'var(--ink)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>{site.name}</CardTitle>
-                        <div className="text-sm mt-1" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>{site.base_url}</div>
-                      </div>
-                      <div className="w-3 h-3 rounded-full" style={{ background: statusColors[siteStatus as keyof typeof statusColors] }} />
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2" style={{ color: 'var(--tweed)' }}>
-                        <Clock className="w-4 h-4" />
-                        <span className="text-sm">{site.lastCheck}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <AlertTriangle className="w-4 h-4" style={{ color: site.alerts > 0 ? 'var(--copper)' : 'var(--tweed-deep)' }} />
-                        <span className="text-sm font-semibold" style={{ color: site.alerts > 0 ? 'var(--copper)' : 'var(--tweed-deep)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
-                          {site.alerts} alerts
-                        </span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            );
-          })}
-        </div>
-      </motion.div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {sitesWithAlerts.map((site, index) => (
+          <motion.div
+            key={site.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 + index * 0.05 }}
+          >
+            <Card style={{
+              background: site.alertCount > 0 
+                ? 'radial-gradient(circle at 18% 12%, rgba(196, 68, 68, 0.08), transparent 28%), rgba(255, 248, 234, 0.56)'
+                : 'radial-gradient(circle at 18% 12%, rgba(52, 131, 78, 0.08), transparent 28%), rgba(255, 248, 234, 0.56)',
+              border: '1px solid var(--line)',
+              boxShadow: '0 18px 46px var(--shadow)'
+            }}>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <Globe className="w-6 h-6" style={{ color: site.alertCount > 0 ? '#c44' : 'var(--petrol)' }} />
+                  {site.alertCount > 0 && (
+                    <span className="text-xs font-medium px-2 py-1 rounded" style={{ 
+                      background: 'rgba(196, 68, 68, 0.1)',
+                      color: '#c44',
+                      fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif'
+                    }}>
+                      {site.alertCount} alert(s)
+                    </span>
+                  )}
+                </div>
+                <h3 className="font-semibold mb-2" style={{ fontFamily: 'var(--font-fraunces), Georgia, serif', color: 'var(--ink)' }}>
+                  {site.name}
+                </h3>
+                <p className="text-sm mb-4" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                  {site.base_url}
+                </p>
+                <div className="flex items-center justify-between text-xs" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                  <span>Last check: 2h ago</span>
+                  <span style={{ color: site.alertCount > 0 ? '#c44' : 'var(--petrol)' }}>
+                    {site.alertCount === 0 ? 'Healthy' : 'Issues detected'}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
+      </div>
     </div>
   );
 }
