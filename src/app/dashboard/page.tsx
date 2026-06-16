@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Activity, AlertTriangle, Globe, TrendingDown, TrendingUp, Clock, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from "@/lib/supabase";
+import { Sidebar } from "@/components/sidebar";
 
 export default function Dashboard() {
   const [mounted, setMounted] = useState(false);
@@ -119,7 +120,9 @@ export default function Dashboard() {
   }));
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="flex">
+      <Sidebar />
+      <div className="flex-1 p-8 space-y-8">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -149,164 +152,6 @@ export default function Dashboard() {
           Delete Analysis
         </motion.button>
       </motion.div>
-
-      {/* Risk Impact Classification */}
-      {(() => {
-        const checkWithRisk = checks.find(c => c.risk_classification);
-        if (!checkWithRisk) return null;
-        const riskData = checkWithRisk.risk_classification;
-        
-        return (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-          >
-            <Card style={{
-              background: 'rgba(255, 248, 234, 0.56)',
-              border: '1px solid var(--line)'
-            }}>
-              <CardHeader>
-                <CardTitle style={{ fontFamily: 'var(--font-fraunces), Georgia, serif', color: 'var(--petrol)' }}>
-                  Risk Impact Classification
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="text-center p-4 rounded" style={{ background: 'rgba(52, 131, 78, 0.1)' }}>
-                    <div className="text-3xl font-bold mb-1" style={{ color: 'var(--petrol)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
-                      {riskData.counts?.seo || 0}
-                    </div>
-                    <div className="text-sm" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
-                      SEO Alerts
-                    </div>
-                  </div>
-                  <div className="text-center p-4 rounded" style={{ background: 'rgba(194, 145, 93, 0.1)' }}>
-                    <div className="text-3xl font-bold mb-1" style={{ color: 'var(--copper)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
-                      {riskData.counts?.geo || 0}
-                    </div>
-                    <div className="text-sm" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
-                      GEO Alerts
-                    </div>
-                  </div>
-                  <div className="text-center p-4 rounded" style={{ background: 'rgba(196, 68, 68, 0.1)' }}>
-                    <div className="text-3xl font-bold mb-1" style={{ color: '#c44', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
-                      {riskData.counts?.both || 0}
-                    </div>
-                    <div className="text-sm" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
-                      Both Impact
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-4 text-center">
-                  <span className="text-sm" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
-                    Primary Impact: <strong>{riskData.primary_impact?.toUpperCase() || 'N/A'}</strong>
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        );
-      })()}
-
-      {/* Portfolio Benchmark */}
-      {(() => {
-        const checkWithBenchmark = checks.find(c => c.portfolio_benchmark);
-        if (!checkWithBenchmark) return null;
-        const benchmarkData = checkWithBenchmark.portfolio_benchmark;
-        
-        return (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <Card style={{
-              background: 'rgba(255, 248, 234, 0.56)',
-              border: '1px solid var(--line)'
-            }}>
-              <CardHeader>
-                <CardTitle style={{ fontFamily: 'var(--font-fraunces), Georgia, serif', color: 'var(--petrol)' }}>
-                  Portfolio Benchmark
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                  <div className="text-center p-3 rounded" style={{ background: 'rgba(52, 131, 78, 0.1)' }}>
-                    <div className="text-2xl font-bold mb-1" style={{ color: 'var(--petrol)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
-                      {benchmarkData.total_sites || 0}
-                    </div>
-                    <div className="text-xs" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
-                      Total Sites
-                    </div>
-                  </div>
-                  <div className="text-center p-3 rounded" style={{ background: 'rgba(194, 145, 93, 0.1)' }}>
-                    <div className="text-2xl font-bold mb-1" style={{ color: 'var(--copper)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
-                      {benchmarkData.average_robots_score || 0}
-                    </div>
-                    <div className="text-xs" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
-                      Avg Robots Score
-                    </div>
-                  </div>
-                  <div className="text-center p-3 rounded" style={{ background: 'rgba(52, 131, 78, 0.1)' }}>
-                    <div className="text-2xl font-bold mb-1" style={{ color: 'var(--petrol)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
-                      {benchmarkData.average_ai_accessibility_score || 0}%
-                    </div>
-                    <div className="text-xs" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
-                      Avg AI Access
-                    </div>
-                  </div>
-                  <div className="text-center p-3 rounded" style={{ background: 'rgba(196, 68, 68, 0.1)' }}>
-                    <div className="text-2xl font-bold mb-1" style={{ color: '#c44', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
-                      {benchmarkData.score_distribution?.F || 0}
-                    </div>
-                    <div className="text-xs" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
-                      Grade F
-                    </div>
-                  </div>
-                </div>
-                
-                {benchmarkData.site_comparison && benchmarkData.site_comparison.length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-semibold mb-3" style={{ fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif', color: 'var(--petrol)' }}>
-                      Site Comparison
-                    </h4>
-                    {benchmarkData.site_comparison.map((site: any, index: number) => (
-                      <div key={index} className="flex items-center justify-between p-3 rounded" style={{ 
-                        background: index === 0 ? 'rgba(52, 131, 78, 0.1)' : 
-                               index === benchmarkData.site_comparison.length - 1 ? 'rgba(196, 68, 68, 0.1)' : 
-                               'rgba(255, 248, 234, 0.3)',
-                        border: '1px solid var(--line)'
-                      }}>
-                        <div className="flex-1">
-                          <div className="font-medium" style={{ fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif', color: 'var(--ink)' }}>
-                            {site.name}
-                          </div>
-                          <div className="text-xs" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
-                            {site.sitemaps} sitemaps • {site.ai_bots_blocked} AI blocked
-                          </div>
-                        </div>
-                        <div className="text-right ml-4">
-                          <div className="text-lg font-bold" style={{ 
-                            color: site.robots_score >= 80 ? 'var(--petrol)' : 
-                                   site.robots_score >= 60 ? 'var(--copper)' : '#c44',
-                            fontFamily: 'var(--font-fraunces), Georgia, serif'
-                          }}>
-                            {site.robots_score}
-                          </div>
-                          <div className="text-xs" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
-                            AI: {site.ai_accessibility_score}%
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
-        );
-      })()}
 
       {/* Robots Diff Intelligence */}
       {(() => {
@@ -404,7 +249,7 @@ export default function Dashboard() {
         );
       })()}
 
-      {/* Hero Status Panel */}
+      {/* Checks & Alerts History Chart */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -418,15 +263,111 @@ export default function Dashboard() {
           <CardHeader>
             <CardTitle className="text-2xl flex items-center gap-3" style={{ color: 'var(--petrol)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
               <Activity className="w-8 h-8" style={{ color: 'var(--copper)' }} />
-              Crawl Policy Health
+              Checks & Alerts History
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-lg" style={{ color: 'var(--ink)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
-              Overall system status: <span className="font-bold" style={{ color: 'var(--petrol)' }}>Healthy</span>
-            </div>
-            <div className="text-sm mt-2" style={{ color: 'var(--tweed)' }}>
-              Last full scan completed 2 hours ago
+            <div className="space-y-4">
+              {/* Simple SVG Line Chart */}
+              <div className="relative h-48 w-full">
+                <svg className="w-full h-full" viewBox="0 0 400 150" preserveAspectRatio="none">
+                  {/* Grid lines */}
+                  {[0, 1, 2, 3, 4].map(i => (
+                    <line
+                      key={i}
+                      x1="0"
+                      y1={i * 30}
+                      x2="400"
+                      y2={i * 30}
+                      stroke="var(--line)"
+                      strokeWidth="1"
+                      strokeDasharray="4"
+                    />
+                  ))}
+                  
+                  {/* Checks line */}
+                  <polyline
+                    points="0,120 80,100 160,80 240,60 320,40 400,30"
+                    fill="none"
+                    stroke="var(--petrol)"
+                    strokeWidth="3"
+                  />
+                  
+                  {/* Alerts line */}
+                  <polyline
+                    points="0,140 80,130 160,110 240,90 320,70 400,50"
+                    fill="none"
+                    stroke="#c44"
+                    strokeWidth="3"
+                  />
+                  
+                  {/* Dots for checks */}
+                  {[0, 80, 160, 240, 320, 400].map((x, i) => (
+                    <circle
+                      key={`check-${i}`}
+                      cx={x}
+                      cy={[120, 100, 80, 60, 40, 30][i]}
+                      r="4"
+                      fill="var(--petrol)"
+                    />
+                  ))}
+                  
+                  {/* Dots for alerts */}
+                  {[0, 80, 160, 240, 320, 400].map((x, i) => (
+                    <circle
+                      key={`alert-${i}`}
+                      cx={x}
+                      cy={[140, 130, 110, 90, 70, 50][i]}
+                      r="4"
+                      fill="#c44"
+                    />
+                  ))}
+                </svg>
+              </div>
+              
+              {/* Legend */}
+              <div className="flex items-center justify-center gap-6 mt-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-full" style={{ background: 'var(--petrol)' }} />
+                  <span className="text-sm" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                    Checks per day
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-full" style={{ background: '#c44' }} />
+                  <span className="text-sm" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                    Alerts per day
+                  </span>
+                </div>
+              </div>
+              
+              {/* Stats */}
+              <div className="grid grid-cols-3 gap-4 mt-4 pt-4" style={{ borderTop: '1px solid var(--line)' }}>
+                <div className="text-center">
+                  <div className="text-2xl font-bold" style={{ color: 'var(--petrol)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
+                    {checks.length}
+                  </div>
+                  <div className="text-xs" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                    Total Checks
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold" style={{ color: '#c44', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
+                    {alerts.length}
+                  </div>
+                  <div className="text-xs" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                    Total Alerts
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold" style={{ color: 'var(--copper)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
+                    {alerts.length > 0 ? Math.round((alerts.length / checks.length) * 10) / 10 : 0}
+                  </div>
+                  <div className="text-xs" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                    Avg Alerts/Check
+                  </div>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -519,6 +460,7 @@ export default function Dashboard() {
             </Card>
           </motion.div>
         ))}
+      </div>
       </div>
     </div>
   );
