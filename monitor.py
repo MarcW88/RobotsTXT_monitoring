@@ -182,8 +182,15 @@ def fetch_text(url):
     response = requests.get(
         url,
         timeout=DEFAULT_TIMEOUT,
-        headers={"User-Agent": "RobotsTxtMonitor/0.1"},
+        headers={
+            "User-Agent": "Mozilla/5.0 (compatible; RobotsTxtMonitor/1.0; +https://github.com/MarcW88/RobotsTXT_monitoring)",
+            "Accept": "text/plain,text/*,*/*;q=0.8",
+        },
     )
+    content_type = response.headers.get("content-type", "").lower()
+    preview = response.text[:500].lower()
+    if "text/html" in content_type and "<html" in preview:
+        raise requests.RequestException(f"{url} returned HTML instead of robots.txt (final_url={response.url})")
     return response.status_code, response.url, response.text
 
 
@@ -191,7 +198,10 @@ def fetch_bytes(url):
     response = requests.get(
         url,
         timeout=DEFAULT_TIMEOUT,
-        headers={"User-Agent": "RobotsTxtMonitor/0.1"},
+        headers={
+            "User-Agent": "Mozilla/5.0 (compatible; RobotsTxtMonitor/1.0; +https://github.com/MarcW88/RobotsTXT_monitoring)",
+            "Accept": "application/xml,text/xml,*/*;q=0.8",
+        },
     )
     return response.status_code, response.url, response.content
 
@@ -625,16 +635,38 @@ def save_check(site, result):
         }
         
         print("Inserting check into Supabase...")
-        supabase_client.table('checks').insert(check_data).execute()
+        check_response = supabase_client.table('checks').insert(check_data).execute()
+        check_id = check_response.data[0]['id'] if check_response.data else None
+        if not check_id:
+            print("Could not retrieve inserted check ID from Supabase")
+            return
         print(f"Check saved to Supabase for site: {site['name']}")
-        
-        # Insert alerts into separate alerts table
+
+        if result.get('sitemap_details'):
+            print(f"Inserting {len(result['sitemap_details'])} sitemap details into sitemap_details table...")
+            for sitemap_detail in result['sitemap_details']:
+                sitemap_data = {
+                    'check_id': check_id,
+                    'site_id': site_id,
+                    'url': sitemap_detail.get('url'),
+                    'parent': sitemap_detail.get('parent'),
+                    'declared_in_robots': sitemap_detail.get('declared_in_robots', False),
+                    'depth': sitemap_detail.get('depth', 0),
+                    'status_code': sitemap_detail.get('status_code'),
+                    'type': sitemap_detail.get('type'),
+                    'url_count': sitemap_detail.get('url_count', 0),
+                    'child_count': sitemap_detail.get('child_count', 0),
+                    'error': sitemap_detail.get('error')
+                }
+                supabase_client.table('sitemap_details').insert(sitemap_data).execute()
+            print("Sitemap details saved to Supabase")
+
         if result.get('alerts'):
             print(f"Inserting {len(result['alerts'])} alerts into alerts table...")
             for alert in result['alerts']:
                 alert_data = {
                     'site_id': site_id,
-                    'check_id': None,  # Will be updated after getting the check ID
+                    'check_id': check_id,
                     'severity': alert.get('severity', 'info'),
                     'alert_type': alert.get('alert_type', 'unknown'),
                     'message': alert.get('message', ''),

@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, Clock } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from "@/lib/supabase";
-import { Sidebar } from "@/components/sidebar";
 
 export default function SitemapsPage() {
   const [sitemaps, setSitemaps] = useState<any[]>([]);
@@ -34,9 +33,7 @@ export default function SitemapsPage() {
   if (loading) return <div className="p-8">Loading...</div>;
 
   return (
-    <div className="flex">
-      <Sidebar />
-      <div className="flex-1 p-8 space-y-8">
+    <div className="p-8 space-y-8">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -102,7 +99,6 @@ export default function SitemapsPage() {
             </Card>
           </motion.div>
         ))}
-      </div>
       </div>
     </div>
   );

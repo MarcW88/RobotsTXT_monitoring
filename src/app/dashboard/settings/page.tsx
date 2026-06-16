@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Settings, Plus, Trash2, Globe } from 'lucide-react';
 import { useState } from 'react';
 import { supabase } from "@/lib/supabase";
-import { Sidebar } from "@/components/sidebar";
 
 export default function SettingsPage() {
   const [newSiteName, setNewSiteName] = useState('');
@@ -77,9 +76,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="flex">
-      <Sidebar />
-      <div className="flex-1 p-8 space-y-8">
+    <div className="p-8 space-y-8">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -210,7 +207,6 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         </motion.div>
-      </div>
       </div>
     </div>
   );
