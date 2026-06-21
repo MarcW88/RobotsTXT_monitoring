@@ -107,13 +107,26 @@ def test_test_important_urls_and_classify_important_url_alerts():
     important_urls = [{"site": "Example", "url": "https://example.com/private", "type": "business", "priority": "high"}]
 
     results = monitor.test_important_urls(site, robots_content, sitemap_details, important_urls)
-    assert any(result["url"] == "https://example.com/private" for result in results)
+    private_result = next(result for result in results if result["url"] == "https://example.com/private")
     assert any(result["url"] == "https://example.com/public" and result["type"] == "sitemap_sample" for result in results)
-    assert any(result["agents"]["Googlebot"] is False for result in results)
+    assert private_result["agents"]["Googlebot"] is False
+    assert private_result["rule_explanations"]["Googlebot"]["matched_rule"]["directive"] == "disallow"
 
     alerts = classify_important_url_alerts(results, None)
     assert any(alert["alert_type"] == "high_priority_url_blocked" for alert in alerts)
     assert any(alert["alert_type"] == "business_url_blocked" for alert in alerts)
+
+
+def test_explain_robots_match_reports_overridden_rule():
+    robots_content = "User-agent: *\nDisallow: /private\nAllow: /private/public"
+    robots_df = monitor.parse_robots_to_df(robots_content, "https://example.com/robots.txt")
+    explanation = monitor.explain_robots_match(robots_df, "Googlebot", "https://example.com/private/public/page")
+
+    assert explanation["allowed"] is True
+    assert explanation["matched_rule"]["directive"] == "allow"
+    assert explanation["matched_rule"]["line_number"] == 3
+    assert explanation["overridden_rule"]["directive"] == "disallow"
+    assert explanation["overridden_rule"]["line_number"] == 2
 
 
 def test_classify_alerts_disallow_all_and_no_sitemap():

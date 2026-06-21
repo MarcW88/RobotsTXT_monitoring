@@ -4,6 +4,7 @@ import gzip
 import hashlib
 import json
 import os
+import re
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
@@ -395,6 +396,98 @@ def previous_important_url_results(previous):
         return []
 
 
+def robots_path_matches(pattern, url_path):
+    if pattern == "":
+        return False
+    escaped = re.escape(pattern).replace("\\*", ".*")
+    if escaped.endswith("\\$"):
+        regex = "^" + escaped[:-2] + "$"
+    else:
+        regex = "^" + escaped
+    return re.match(regex, url_path) is not None
+
+
+def user_agent_applies(rule_agent, user_agent):
+    rule_agent = (rule_agent or "*").lower()
+    user_agent = (user_agent or "").lower()
+    return rule_agent == "*" or rule_agent in user_agent or user_agent in rule_agent
+
+
+def rule_specificity(rule):
+    pattern = rule.get("content") or ""
+    return len(pattern.replace("*", "").replace("$", ""))
+
+
+def explain_robots_match(robots_df, user_agent, url):
+    if robots_df is None or robots_df.empty:
+        return {
+            "user_agent": user_agent,
+            "url": url,
+            "allowed": True,
+            "reason": "No robots rules parsed for this URL.",
+            "matched_rule": None,
+            "overridden_rule": None,
+        }
+
+    parsed_url = urlparse(url)
+    url_path = parsed_url.path or "/"
+    if parsed_url.query:
+        url_path = f"{url_path}?{parsed_url.query}"
+
+    directives = robots_df[robots_df["directive"].isin(["allow", "disallow"])].dropna(subset=["content"])
+    applicable = directives[directives["user_agent"].apply(lambda agent: user_agent_applies(agent, user_agent))]
+    matching_rules = []
+    for _, rule in applicable.iterrows():
+        rule_dict = rule.to_dict()
+        if robots_path_matches(rule_dict.get("content") or "", url_path):
+            matching_rules.append(rule_dict)
+
+    if not matching_rules:
+        return {
+            "user_agent": user_agent,
+            "url": url,
+            "allowed": True,
+            "reason": "No matching Allow/Disallow rule; URL is allowed by default.",
+            "matched_rule": None,
+            "overridden_rule": None,
+        }
+
+    matching_rules.sort(key=lambda rule: (rule_specificity(rule), rule.get("directive") == "allow", -(rule.get("line_number") or 0)), reverse=True)
+    winner = matching_rules[0]
+    opposing_rules = [rule for rule in matching_rules[1:] if rule.get("directive") != winner.get("directive")]
+    overridden_rule = opposing_rules[0] if opposing_rules else None
+    allowed = winner.get("directive") == "allow"
+
+    return {
+        "user_agent": user_agent,
+        "url": url,
+        "allowed": allowed,
+        "reason": f"{winner.get('directive', '').title()} {winner.get('content')} line {winner.get('line_number')} wins for {url_path}.",
+        "matched_rule": {
+            "user_agent": winner.get("user_agent"),
+            "directive": winner.get("directive"),
+            "path": winner.get("content"),
+            "line_number": winner.get("line_number"),
+            "specificity": rule_specificity(winner),
+        },
+        "overridden_rule": {
+            "user_agent": overridden_rule.get("user_agent"),
+            "directive": overridden_rule.get("directive"),
+            "path": overridden_rule.get("content"),
+            "line_number": overridden_rule.get("line_number"),
+            "specificity": rule_specificity(overridden_rule),
+        } if overridden_rule else None,
+    }
+
+
+def explain_important_url_rules(robots_content, url, agent_results):
+    robots_df = parse_robots_to_df(robots_content, url)
+    return {
+        user_agent: explain_robots_match(robots_df, user_agent, url)
+        for user_agent in agent_results
+    }
+
+
 def test_important_urls(site, robots_content, sitemap_details, important_urls):
     sitemap_url_set = urls_from_sitemaps(sitemap_details)
     matching_urls = [row for row in important_urls if site_matches_important_url(site, row)]
@@ -427,6 +520,7 @@ def test_important_urls(site, robots_content, sitemap_details, important_urls):
                 "is_homepage": is_homepage_url(site["base_url"], url),
                 "in_sitemap": url in sitemap_url_set,
                 "agents": agent_results,
+                "rule_explanations": explain_important_url_rules(robots_content, url, agent_results),
             }
         )
 

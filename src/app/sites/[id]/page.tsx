@@ -400,19 +400,34 @@ export default function SiteDetail({ params }: { params: { id: string } }) {
                           Source: {item.type === 'sitemap_sample' ? 'Sitemap sample' : item.type || 'Configured'} · Priority: {item.priority || 'n/a'} · In sitemap: {item.in_sitemap ? 'yes' : 'no'}
                         </div>
                         <div className="flex flex-wrap gap-2 mt-3">
-                          {Object.entries(item.agents || {}).map(([agent, allowed]) => (
-                            <span
+                          {Object.entries(item.agents || {}).map(([agent, allowed]) => {
+                            const explanation = item.rule_explanations?.[agent];
+                            const matchedRule = explanation?.matched_rule;
+                            const overriddenRule = explanation?.overridden_rule;
+
+                            return (
+                            <div
                               key={agent}
-                              className="px-2 py-1 rounded text-xs font-semibold"
+                              className="px-2 py-1 rounded text-xs"
                               style={{
                                 background: allowed ? 'rgba(82, 106, 104, 0.14)' : 'rgba(194, 145, 93, 0.22)',
                                 color: allowed ? 'var(--petrol)' : 'var(--copper)',
                                 border: '1px solid var(--line)'
                               }}
                             >
-                              {agent}: {allowed ? 'allowed' : 'blocked'}
-                            </span>
-                          ))}
+                              <div className="font-semibold">{agent}: {allowed ? 'allowed' : 'blocked'}</div>
+                              <div className="mt-1" style={{ color: 'var(--tweed)' }}>
+                                {matchedRule
+                                  ? `${matchedRule.directive} ${matchedRule.path} · line ${matchedRule.line_number}`
+                                  : 'Default: no matching rule'}
+                              </div>
+                              {overriddenRule && (
+                                <div className="mt-1" style={{ color: 'var(--copper)' }}>
+                                  Overrides {overriddenRule.directive} {overriddenRule.path} · line {overriddenRule.line_number}
+                                </div>
+                              )}
+                            </div>
+                          )})}
                         </div>
                       </div>
                     </div>
