@@ -377,36 +377,51 @@ export default function SiteDetail({ params }: { params: { id: string } }) {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {alerts.slice(0, 5).map((item: any, index: number) => (
+                {importantUrlResults.length ? importantUrlResults.map((item: any, index: number) => {
+                  const blockedAgents = Object.entries(item.agents || {}).filter(([, allowed]) => allowed === false).map(([agent]) => agent);
+                  const isBlocked = blockedAgents.length > 0;
+
+                  return (
                   <motion.div
-                    key={item.url}
+                    key={`${item.url}-${index}`}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="flex items-center gap-4 p-4 rounded-lg hover:bg-opacity-80 transition-colors"
+                    transition={{ delay: index * 0.05 }}
+                    className="p-4 rounded-lg hover:bg-opacity-80 transition-colors"
                     style={{ background: 'rgba(255, 248, 234, 0.3)' }}
                   >
-                    <div className="w-3 h-3 rounded-full" style={{
-                      background: item.status === 'Allowed' ? 'var(--petrol)' : 'var(--copper)'
-                    }} />
-                    <div className="flex-1">
-                      <div className="font-medium" style={{ color: 'var(--ink)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>{item.url || 'No URL'}</div>
-                      <div className="text-sm mt-1" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
-                        {item.alert_type || 'Alert'}
+                    <div className="flex items-start gap-4">
+                      <div className="w-3 h-3 rounded-full mt-2" style={{
+                        background: isBlocked ? 'var(--copper)' : 'var(--petrol)'
+                      }} />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium break-all" style={{ color: 'var(--ink)', fontFamily: 'var(--font-fraunces), Georgia, serif' }}>{item.url || 'No URL'}</div>
+                        <div className="text-sm mt-1" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>
+                          Source: {item.type === 'sitemap_sample' ? 'Sitemap sample' : item.type || 'Configured'} · Priority: {item.priority || 'n/a'} · In sitemap: {item.in_sitemap ? 'yes' : 'no'}
+                        </div>
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {Object.entries(item.agents || {}).map(([agent, allowed]) => (
+                            <span
+                              key={agent}
+                              className="px-2 py-1 rounded text-xs font-semibold"
+                              style={{
+                                background: allowed ? 'rgba(82, 106, 104, 0.14)' : 'rgba(194, 145, 93, 0.22)',
+                                color: allowed ? 'var(--petrol)' : 'var(--copper)',
+                                border: '1px solid var(--line)'
+                              }}
+                            >
+                              {agent}: {allowed ? 'allowed' : 'blocked'}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <span className="px-3 py-1 rounded text-sm font-semibold" style={{
-                        background: item.severity === 'critical' ? 'var(--copper)' : 'var(--petrol)',
-                        color: 'var(--cream)',
-                        fontFamily: 'Georgia, serif'
-                      }}>
-                        {item.severity || 'Unknown'}
-                      </span>
-                      <span className="text-sm" style={{ color: 'var(--tweed)', fontFamily: 'var(--font-instrument-sans), system-ui, sans-serif' }}>{item.created_at ? new Date(item.created_at).toLocaleString() : 'Unknown'}</span>
-                    </div>
                   </motion.div>
-                ))}
+                )}) : (
+                  <div className="p-4 rounded-lg text-sm" style={{ background: 'rgba(255, 248, 234, 0.3)', color: 'var(--tweed)' }}>
+                    No important URLs checked yet. Run a check after sitemap discovery to populate this table.
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

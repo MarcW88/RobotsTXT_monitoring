@@ -8,7 +8,7 @@ import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 from xml.etree import ElementTree
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse, urlunparse
 
 import requests
 import yaml
@@ -66,7 +66,9 @@ def now_iso():
 
 
 def normalize_base_url(base_url):
-    return base_url.rstrip("/") + "/"
+    parsed = urlparse(base_url if "://" in base_url else f"https://{base_url}")
+    origin = urlunparse((parsed.scheme or "https", parsed.netloc or parsed.path, "", "", "", ""))
+    return origin.rstrip("/") + "/"
 
 
 def robots_url(base_url):
