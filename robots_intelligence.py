@@ -115,7 +115,8 @@ class AIAccessibilityScore:
                 'ai_accessibility_score': 0,
                 'ai_accessibility_matrix': {},
                 'accessible_bots': [],
-                'blocked_bots': []
+                'blocked_bots': [],
+                'risk_level': 'High'
             }
         
         # Build accessibility matrix
@@ -322,9 +323,9 @@ class RobotsDiffIntelligence:
             return {
                 'changes': [],
                 'impact_summary': {'seo': 0, 'geo': 0, 'both': 0},
-                'overall_impact': 'Unknown'
+                'overall_impact': 'Unknown',
+                'change_count': 0
             }
-        
         previous_lines = set(previous_content.splitlines())
         current_lines = set(current_content.splitlines())
         
